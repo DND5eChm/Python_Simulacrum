@@ -1,0 +1,47 @@
+color: rgb(0, 0, 0)
+color: rgb(34, 34, 34)
+background-color: rgb(209, 234, 247)
+background-color: rgb(226, 244, 251)
+white-space: normal
+word-spacing: normal
+font-size: medium
+font-weight: 400
+letter-spacing: normal
+font-style: normal
+text-decoration-thickness: initial
+text-decoration-style: initial
+text-decoration-color: initial
+-webkit-text-stroke-width: 0px
+word-spacing: 0px
+font-family: "Segoe UI", Calibri, "Myriad Pro", Myriad, "Trebuchet MS", Helvetica, Arial, sans-serif
+font-family: 'Microsoft YaHei'
+display: inline !important
+float: none
+font-size: 13px
+font-variant-caps: normal
+font-variant-ligatures: normal
+orphans: 2
+text-align: start
+text-indent: 0px
+line-height: 1.4em
+border: 0px
+cursor: pointer
+font-weight: bold
+text-transform: none
+widows: 2
+font-style: italic
+text-indent: 10.5pt
+color: inherit
+font: inherit
+empty-cells: show
+font-style: inherit
+font-variant: inherit
+font-weight: inherit
+font-stretch: inherit
+font-size: inherit
+line-height: inherit
+font-optical-sizing: inherit
+font-kerning: inherit
+font-feature-settings: inherit
+font-variation-settings: inherit
+vertical-align: top

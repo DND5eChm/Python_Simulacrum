@@ -1,0 +1,28 @@
+mso-font-kerning:1.0000pt
+font-weight:bold
+mso-spacerun:'yes'
+mso-bidi-font-family:'Times New Roman'
+font-size:10.5000pt
+font-size:10.5pt
+font-family:等线
+mso-fareast-font-family:等线
+font-family:Arial
+mso-ascii-font-family:Arial
+mso-hansi-font-family:Arial
+mso-bidi-font-family:Arial
+font-weight:normal
+text-indent:10.5000pt
+text-indent:10.5pt
+mso-char-indent-count:1.0000
+mso-themecolor:accent4
+mso-bidi-language:AR-SA
+mso-fareast-language:ZH-CN
+mso-ansi-language:EN-US
+mso-ligatures:none
+mso-bidi-theme-font:minor-bidi
+mso-bidi-font-family:"Times New Roman"
+mso-hansi-theme-font:minor-latin
+mso-ascii-theme-font:minor-latin
+mso-bidi-font-size:11.0pt
+mso-themeshade:191
+mso-char-indent-count:1.0
