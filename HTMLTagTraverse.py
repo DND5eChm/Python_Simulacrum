@@ -1,3 +1,7 @@
+NOCONFIGTAG = ["br","hr"]
+SELFCLOSEDTAG = ["img","br","hr"]
+
+
 class htmltag:
     tag_name = ""
     tag_id = ""
@@ -6,7 +10,9 @@ class htmltag:
     tag_height = ""
     tag_src = ""
     tag_href = ""
+    tag_align = ""
     tag_bgcolor = ""
+    tag_title = ""
     tag_style = []
     
     self_closed = False
@@ -18,7 +24,7 @@ class htmltag:
         space = tag_informations.find(" ")
         if space != -1:
             self.tag_name = tag_informations[:space].lower()
-            if self.tag_name != "br":
+            if self.tag_name not in NOCONFIGTAG:
                 tag_informations = tag_informations[space+1:]
                 self.tag_id = self.find_config("id",tag_informations)
                 self.tag_class = self.find_config("class",tag_informations)
@@ -29,10 +35,14 @@ class htmltag:
                     self_closed = True
                 elif self.tag_name == "a":
                     self.tag_href = self.find_config("href",tag_informations)
+                elif self.tag_name == "p":
+                    self.tag_align = self.find_config("align",tag_informations)
                 elif self.tag_name == "td":
                     self.tag_bgcolor = self.find_config("bgColor",tag_informations)
+                elif self.tag_name in ["abbr","acronym"]:
+                    self.tag_title = self.find_config("title",tag_informations)
                 self.tag_style = [style.strip() for style in translate_html_entity(self.find_config("style",tag_informations)).split(";") if style.strip() != ""]
-            else:
+            if self.tag_name in SELFCLOSEDTAG:
                 self_closed = True
         else:
             self.tag_name = tag_informations
@@ -72,8 +82,12 @@ class htmltag:
             tag_text += " src=\""+self.tag_src+"\""
         if self.tag_href != "":
             tag_text += " herf=\""+self.tag_href+"\""
+        if self.tag_align != "":
+            tag_text += " align=\""+self.tag_align+"\""
         if self.tag_bgcolor != "":
             tag_text += " bgColor=\""+self.tag_bgcolor+"\""
+        if self.tag_title != "":
+            tag_text += " title=\""+self.tag_title+"\""
         if len(self.tag_style) != 0:
             tag_text += " style=\""+";".join(self.tag_style).replace("\"","'")+"\""
         return "<"+tag_text+">"
@@ -148,3 +162,38 @@ def translate_html_entity(text: str):
     output = output.replace("&quot;","\"")
     output = output.replace("&apos;","'")
     return output
+
+UNABLEWORDS = " \\/:*?\"<>|"
+
+def get_page_default_name(data: str):
+    page_name = data
+    tag_need = ""
+    for tag_name in ["h1","h2","h3","h4","h5"]:
+        if ("<" + tag_name) in data:
+            tag_need = tag_name
+            break
+    while True:
+        tag,left,right,c_left,c_right = find_tag_pair(page_name,0,tag_need)
+        if left != -1 and right != -1 and c_left != -1 and c_right != -1:
+            if tag.self_closed:
+                page_name = page_name[right+1:]
+            else:
+                page_name = page_name[right+1:c_left]
+                tag_need = ""
+        else:
+            break
+    
+    if "<" in page_name or ">" in page_name: # 说明解析失败了
+        return "未命名页面"
+    if len(page_name) > 30: # 太长了，说明没有标题
+        return "未命名页面"
+    
+    page_name = page_name.replace("&nbsp;"," ")
+    output = ""
+    for word in page_name:
+        if word in UNABLEWORDS:
+            output = output + "_"
+        else:
+            output = output + word
+    return output
+    

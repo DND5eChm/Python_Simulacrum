@@ -5,7 +5,8 @@ SAMEWORDS: dict[str, str] = {
     "strong" : "b",
     "em" : "i",
     "del" : "s",
-    "div" : "quote"
+    "div" : "quote",
+    "blockquote" : "quote"
 }
 
 # 将html文本转换为bbcode文本
@@ -34,10 +35,19 @@ def morph_html_to_bbcode(html_text: str) -> str:
             else:
                 if tag.tag_name in SAMEWORDS.keys():
                     tag.tag_name = SAMEWORDS[tag.tag_name]
-                if tag.tag_name in ["quote","b","i","s","table","tr","td"]:
-                    bbcode_start = bbcode_start + "["+tag.tag_name+"]"
-                    bbcode_end = "[/"+tag.tag_name+"]" + bbcode_end
+                if tag.tag_name in ["quote","b","i","s","table","tr","td","sup","sub","tt","list","li"]:
+                    bbcode_start = bbcode_start + f"[{tag.tag_name}]"
+                    bbcode_end = f"[/{tag.tag_name}]" + bbcode_end
                     print("已解析"+tag.tag_name)
+                elif tag.tag_align != "":
+                    bbcode_start = bbcode_start + f"[{tag.tag_align}]"
+                    bbcode_end = f"[/{tag.tag_align}]" + bbcode_end
+                elif tag.tag_href != "":
+                    bbcode_start = bbcode_start + f"[url={tag.tag_href}]"
+                    bbcode_end = "[/url]" + bbcode_end
+                elif tag.tag_name in ["abbr","acronym"] and tag.tag_title != "":
+                    bbcode_start = bbcode_start + f"[{tag.tag_name}={tag.tag_title}]"
+                    bbcode_end = f"[/{tag.tag_name}]" + bbcode_end
                 
                 for style in tag.tag_style:
                     if ":" in style:
@@ -54,8 +64,23 @@ def morph_html_to_bbcode(html_text: str) -> str:
                                     style_config = str(int(float(style_config[:-2])*3/4))
                             except:
                                 break
-                            bbcode_start = bbcode_start + "[size="+style_config+"]"
+                            bbcode_start = bbcode_start + f"[size={style_config}]"
                             bbcode_end = "[/size]" + bbcode_end
+                        elif style_name == "text-decoration":
+                            if style_config == "underline":
+                                bbcode_start = bbcode_start + "[u]"
+                                bbcode_end = "[/u]" + bbcode_end
+                        elif style_name == "list-style-type":
+                            if style_config == "disc":
+                                bbcode_start.replace("[li]","[*]")
+                                bbcode_end.replace("[/li]","[*]")
+                            elif style_config == "circle":
+                                bbcode_start.replace("[li]","[o]")
+                                bbcode_end.replace("[/li]","[o]")
+                            elif style_config == "square":
+                                bbcode_start.replace("[li]","[x]")
+                                bbcode_end.replace("[/li]","[x]")
+                            
             
             output = output[0:start_left]+bbcode_start+bbcode_content+bbcode_end+output[end_right+1:]
             #print(bbcode_start+bbcode_content+bbcode_end)
