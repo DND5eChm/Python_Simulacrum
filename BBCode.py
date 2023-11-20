@@ -13,17 +13,14 @@ SAMEWORDS: dict[str, str] = {
 def morph_html_to_bbcode(html_text: str) -> str:
     output: str = html_text
     cursor: int = 0
-    output = output.replace("\r"," ")
+    output = output.replace("\r","")
     output = output.replace("\n"," ")
     output = output.replace("<br>","\n")
-    output = output.replace("<p>","")
-    output = output.replace("<p align=center>","")
-    output = output.replace("</p>","\n")
     output = output.replace("!important","")
     while(True):
         tag, start_left, start_right, end_left, end_right = find_tag_pair(output,cursor)
         if start_left != -1 and start_right != -1 and end_left != -1 and end_right != -1:
-            #print(output[start_left:start_right+1]+"  "+output[end_left:end_right+1])
+            print("——"+output[start_left:start_right+1]+"  "+output[end_left:end_right+1])
             tag.tag_class = ""
             bbcode_start = ""
             bbcode_content = output[start_right+1:end_left]
@@ -38,7 +35,8 @@ def morph_html_to_bbcode(html_text: str) -> str:
                 if tag.tag_name in ["quote","b","i","s","table","tr","td","sup","sub","tt","list","li"]:
                     bbcode_start = bbcode_start + f"[{tag.tag_name}]"
                     bbcode_end = f"[/{tag.tag_name}]" + bbcode_end
-                    print("已解析"+tag.tag_name)
+                elif tag.tag_name == "p":
+                    bbcode_end = bbcode_end + "\n"
                 elif tag.tag_align != "":
                     bbcode_start = bbcode_start + f"[{tag.tag_align}]"
                     bbcode_end = f"[/{tag.tag_align}]" + bbcode_end
@@ -52,18 +50,21 @@ def morph_html_to_bbcode(html_text: str) -> str:
                 for style in tag.tag_style:
                     if ":" in style:
                         style_name, style_config = style.split(":")
+                        style_name = style_name.strip()
                         style_config = style_config.strip()
                         if style_name == "color":
                             bbcode_start = bbcode_start + "[color="+style_config+"]"
                             bbcode_end = "[/color]" + bbcode_end
-                        elif style_name == "font-size":
+                        elif style_name in ["font-size","mso-bidi-font-size"]:
                             try:
                                 if style_config.endswtih("pt"):
-                                    style_config = str(int(style_config[:-2]))
+                                    style_config = str(int(float(style_config[:-2])))+"pt"
                                 elif style_config.endswtih("px"):
-                                    style_config = str(int(float(style_config[:-2])*3/4))
+                                    style_config = str(int(float(style_config[:-2])))+"px"
+                                else:
+                                    style_config = str(int(float(style_config)))
                             except:
-                                break
+                                style_config = style_config.replace(".0000","")
                             bbcode_start = bbcode_start + f"[size={style_config}]"
                             bbcode_end = "[/size]" + bbcode_end
                         elif style_name == "text-decoration":

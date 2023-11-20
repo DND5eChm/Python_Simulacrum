@@ -100,7 +100,7 @@ def save():
     if origin != "":
         if not os.path.exists("output"):
             os.makedirs("output")
-        with open("output.txt","w",encoding="UTF-8") as f:
+        with open("output/output.txt","w",encoding="UTF-8") as f:
             f.write(origin)
         print("已保存！")
     else:
