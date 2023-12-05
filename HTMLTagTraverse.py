@@ -185,8 +185,20 @@ def get_page_default_name(data: str):
     
     if "<" in page_name or ">" in page_name: # 说明解析失败了
         return "未命名页面"
-    if len(page_name) > 30: # 太长了，说明没有标题
+    elif page_name == "": # 说明解析了个寂寞
         return "未命名页面"
+    elif len(page_name) > 30: # 太长了，需要分割
+        page_name = page_name[:30]
+    
+    # 如果包含中文，则去除英文
+    chinese_name: str = ""
+    for c in page_name:
+        if ('\u0e00' <= c <= '\u9fa5') or ('0' <= c <= '9'):
+            chinese_name += c
+        else:
+            break
+    if chinese_name != "":
+        page_name = chinese_name
     
     page_name = page_name.replace("&nbsp;"," ")
     output = ""

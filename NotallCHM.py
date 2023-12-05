@@ -77,7 +77,7 @@ def morph_notallbook_chm_html(old_text: str) -> str:
     output = morph_brbr_to_p(output)
     output = fix_table(output)
     output = output.replace(u"\xa0","&nbsp;")
-    output = output.replace(u"\u2014","...")
+    output = output.replace(u"\u2014","—")
     output = output.replace("•","·")
     output = output.replace("<div","<div style=\"BORDER-TOP: black 1px solid; FONT-FAMILY: 仿宋; BORDER-RIGHT: black 1px solid; WIDTH: 600px; BORDER-BOTTOM: black 1px solid; PADDING-BOTTOM: 10px; PADDING-TOP: 10px; PADDING-LEFT: 50px; MARGIN-LEFT: 50px; BORDER-LEFT: black 1px solid; PADDING-RIGHT: 50px; BACKGROUND-COLOR: #cccccc\"")
     return output

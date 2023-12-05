@@ -17,6 +17,9 @@ def betterize_table(table: list[list[str]],first_line_bold: bool = True) -> str:
     for i in range(table_height):
         while(len(table[i]) < table_width):
             table[i] += [""]
+    # 防止空表幽灵
+    if len(table) == 0 or len(table[0]) == 0:
+        return""
     # 检测掷骰表，是的话等下给第一列加上居中和宽度
     left_top = table[0][0]
     roll_table = False
