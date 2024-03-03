@@ -5,6 +5,7 @@ import re
 import win32clipboard as winclip
 import win32con
 import HTMLClipboard as hcp
+'''
 import AutoTabler as atr
 
 from FormatTrashBinner import clean_trash_format
@@ -15,7 +16,6 @@ from HTMLTagTraverse import get_page_default_name
 WINDOW: Tk
 
 #——————————————————————————————————————————
-
 #显示剪贴板源数据
 def clipboard_origin():
     origin = hcp.DumpHtml()
@@ -148,7 +148,101 @@ if __name__ == "__main__":
     a_button("处理DOC/RTF复制的富文本",rtf_process)
     a_button("html -> 果园BBcode",html_to_bbcode)
     a_button("html -> 不全书格式",html_to_notall)
-    a_button(f"保存为htm文件",save_with_template_html)
-    a_button(f"保存为txt文件",save)
+    a_button("保存为htm文件",save_with_template_html)
+    a_button("保存为txt文件",save)
     a_button("用已复制文本制作表格(用|分隔）",make_table)
+    WINDOW.mainloop()
+
+'''
+#from pyquery import PyQuery as pq
+from lxml import etree
+
+WINDOW: Tk
+
+class Simulacrum:
+    
+    def __init__(self):
+        self.data: str = ""
+        self.data_html = None
+        self.data_format: str = ""
+
+    # 获取剪贴板源数据
+    def clipboard_get(self):
+        origin = hcp.DumpHtml()
+        if origin != "":
+            self.data = origin
+            self.data_html = etree.HTML(self.data)
+            self.data_format = ""
+        else:
+            try:
+                winclip.OpenClipboard()
+                text = winclip.GetClipboardData(win32con.CF_UNICODETEXT)
+            finally:
+                winclip.CloseClipboard()
+            if text != "":
+                self.data = text
+                self.data_html = None
+                self.data_format = ""
+            else:
+                print("剪贴板内容为空")
+                return
+        print("已获取剪贴板源数据")
+        
+        if self.data_html != None:
+        print("预处理开始")
+        self.pre_process()
+
+    # 预处理
+    def pre_process(self):
+        self.walk(self.data_html,self.clear_style)
+        print(etree.dump(self.data_html))
+            
+    def find_style(self,style_text,need) -> str:
+        styles = style_text.split(";")
+        for style in styles:
+            if ":" in style:
+                left = style.split(":",1)[0]
+                if left.strip() == need:
+                    return style.strip()
+        return need+":"
+    
+    def clear_style(self,html):
+        # 处理br之类的无需属性的标签
+        if html.tag in ["br","strong","em"]:
+            if "style" in html.attrib:
+                del html.attrib["style"]
+        # 处理class相关的内容
+        if "class" in html.attrib:
+            html_class = html.get("class",default="None")
+            # 果园标签
+            if "style" in html.attrib:
+                if html_class == "bbc_color":
+                    html.attrib["style"] = self.find_style(html.attrib["style"],"color")
+                elif html_class == "bbc_size":
+                    html.attrib["style"] = self.find_style(html.attrib["style"],"font-size")
+                else:
+                    del html.attrib["style"]
+            del html.attrib["class"]
+        elif "style" in html.attrib:
+            del html.attrib["style"]
+        # 处理id相关的内容
+        if "id" in html.attrib:
+            del html.attrib["id"]
+    
+    def walk(self,root,command):
+        for item in root.iter():
+            try:
+                command(item)
+            except:
+                print("[Error]"+str(type(item)))
+        
+
+# UI
+if __name__ == "__main__":
+    WINDOW = Tk()
+    sim = Simulacrum()
+    def a_button(text: str,command):
+        Button(WINDOW, text = text, command = command).pack()
+
+    a_button("获取剪贴板内容",sim.clipboard_get)
     WINDOW.mainloop()
