@@ -127,7 +127,10 @@ def find_tag_close_places(text: str,start_index: int,named: str):
 
 def find_tag(text: str,start_index: int, named: str = ""):
     cursor = start_index
-    length = len(text)
+    try:
+        length = len(text)
+    except:
+        return None, -1, -1
     while True:
         cursor_left, cursor_right = find_tag_places(text,cursor)
         if cursor_left != -1 and cursor_right != -1 and cursor < length:

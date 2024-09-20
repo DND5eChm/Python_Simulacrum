@@ -10,7 +10,7 @@ def morph_span_to_chm_font(span_text: str) -> str:
         right = text.find("\"",left+1)
         if left == -1 or right == -1:
             print(text)
-            print("出错，遇到未闭合的style")
+            print("[错误]出错，遇到未闭合的style")
             return text
         forms = text[left+1:right].split(";")
         #print(text)
@@ -40,7 +40,10 @@ def morph_span_to_chm_font(span_text: str) -> str:
                 elif arg == "18pt" or arg == "16pt":
                     new_texts.append("size=4")
                 elif arg.endswith("pt"):
-                    size: int = round(int(arg[:-2]) / 4)
+                    try:
+                        size: int = round(float(arg[:-2]) / 4)
+                    except:
+                        size: int = round(float(arg[:-2]) / 4)
                     new_texts.append("size="+str(size)+"px")
                 else:
                     new_texts.append("size="+arg)
@@ -70,14 +73,23 @@ def morph_brbr_to_p(br_text: str) -> str:
     output = output.replace("<br>","<br>\n")
     return "<p>" + output + "</p>"
 
+# 将果园的引用文改为不全书版的小纸条栏
+def morph_quoteheader_to_quoteblock(quote_text: str) -> str:
+    output: str = quote_text
+    output = re.sub(r"<div.*><div><a herf.*>引述: .*</a></div></div>","",output)
+    output = re.sub(r"<blockquote.*>","<div style=\"BORDER-TOP: black 1px solid; BORDER-RIGHT: black 1px solid; WIDTH: 600px; BORDER-BOTTOM: black 1px solid; PADDING-BOTTOM: 10px; PADDING-TOP: 10px; PADDING-LEFT: 50px; MARGIN-LEFT: 50px; BORDER-LEFT: black 1px solid; PADDING-RIGHT: 50px; BACKGROUND-COLOR: #eeeeee\">",output)
+    output = output.replace("</blockquote>","</div>")
+    output = output.replace("<div><div></div></div>","")
+    return output
+
 # 不全书处理流程
 def morph_notallbook_chm_html(old_text: str) -> str:
     output: str = old_text
     output = morph_span_to_chm_font(output)
     output = morph_brbr_to_p(output)
+    output = morph_quoteheader_to_quoteblock(output)
     output = fix_table(output)
     output = output.replace(u"\xa0","&nbsp;")
     output = output.replace(u"\u2014","—")
     output = output.replace("•","·")
-    output = output.replace("<div","<div style=\"BORDER-TOP: black 1px solid; FONT-FAMILY: 仿宋; BORDER-RIGHT: black 1px solid; WIDTH: 600px; BORDER-BOTTOM: black 1px solid; PADDING-BOTTOM: 10px; PADDING-TOP: 10px; PADDING-LEFT: 50px; MARGIN-LEFT: 50px; BORDER-LEFT: black 1px solid; PADDING-RIGHT: 50px; BACKGROUND-COLOR: #cccccc\"")
     return output

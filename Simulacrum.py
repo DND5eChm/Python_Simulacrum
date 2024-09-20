@@ -15,11 +15,10 @@ from HTMLTagTraverse import get_page_default_name
 
 WINDOW: Tk
 
-#——————————————————————————————————————————
-# ——————————————————————————————————————————
-
+'''
+# 基础功能
+'''
 # 显示剪贴板源数据
-
 def clipboard_origin():
     origin = hcp.DumpHtml()
     if origin != "":
@@ -33,45 +32,35 @@ def clipboard_origin():
         if text != "":
             print(text)
         else:
-            print("剪贴板内容为空")
+            print("[警告]剪贴板内容为空")
 
 # 将果园文本转化为不全书html
-
-
 def html_to_notall():
     origin = hcp.DumpHtml()
     output = morph_notallbook_chm_html(origin)
     print(output)
-    print("完成！")
+    print("[提醒]处理完成！")
     hcp.PutHtml(output)
 
-# 处理果园复制下来的文本
-
-
-def goddess_process():
-    origin = hcp.DumpHtml()
-    output = clean_trash_format(origin, "goddess")
-    print(output)
-    print("完成！")
+'''
+# 处理功能
+'''
+# 预处理剪贴板
+def preprocess(data):
+    print("[提醒]预处理开始")
+    output = clean_trash_format(data)
+    print("[提醒]预处理完成！")
     hcp.PutHtml(output)
 
-# 处理RTF复制下来的文本
-
-
-def rtf_process():
-    origin = hcp.DumpHtml().replace("\n", "")
-    output = clean_trash_format(origin, "rtf")
-    print(output)
-    print("完成！")
-    hcp.PutHtml(output)
-
-
+'''
+# 转换功能
+'''
 # 将果园文本转化为BBcode,然后存入剪贴板
 def html_to_bbcode():
     origin = hcp.DumpHtml()
     output = morph_html_to_bbcode(origin)
     print(output)
-    print("完成！")
+    print("[提醒]转换完成！")
     try:
         winclip.OpenClipboard()
         winclip.EmptyClipboard()
@@ -79,11 +68,11 @@ def html_to_bbcode():
     finally:
         winclip.CloseClipboard()
 
-# ————————————————————
-
-
+'''
+# 保存功能
+'''
+# 保存，但以读取模板并填写的格式保存
 def save_with_template_html():
-    # 保存，但以读取模板并填写的格式保存
     origin = hcp.DumpHtml()
     if origin != "":
         page_default_name = get_page_default_name(origin)
@@ -98,25 +87,24 @@ def save_with_template_html():
         if user_path == None:
             print("已取消保存")
             return
-        print('已保存至：', user_path)
+        print("[提醒]已保存至：", user_path.name)
         output_name = os.path.splitext(os.path.basename(user_path.name))[0]
         with open(user_path.name, "w", encoding="GBK") as f:
             f.write(template.replace("{{内容}}", origin).replace(
                 "{{标题}}", output_name))
-        print("已保存！")
+        print("[提醒]已保存！")
     else:
-        print("剪贴板为空/不是HTML！")
+        print("[警告]剪贴板为空/不是HTML！")
 
-
+# 保存
 def save():
-    # 保存
     origin = hcp.DumpHtml()
     if origin != "":
         if not os.path.exists("output"):
             os.makedirs("output")
         with open("output/output.txt", "w", encoding="UTF-8") as f:
             f.write(origin)
-        print("已保存！")
+        print("[提醒]已保存！")
     else:
         text = ""
         try:
@@ -129,13 +117,11 @@ def save():
                 os.makedirs("output")
             with open("output/output.txt", "w", encoding="UTF-8") as f:
                 f.write(text)
-                print("已保存！")
+                print("[提醒]已保存！")
         else:
-            print("剪贴板为空/无法解析！")
+            print("[警告]剪贴板为空/无法解析！")
 
 # 将文本转化为dnd样式的首行加粗间隔表格table
-
-
 def make_table():
     origin = hcp.DumpHtml()
     if origin != "":
@@ -149,19 +135,17 @@ def make_table():
         winclip.CloseClipboard()
     output = atr.make_table(output)
     print(output)
-    print("完成！")
+    print("[提醒]表格制作完成！")
     hcp.PutHtml(output)
 
 # 将HTML代码以HTML格式输出到剪贴板
-
-
 def html_to_htmlcode():
     origin = hcp.DumpHtml()
     if origin != "":
         # 保留HTML标签，直接输出到剪贴板
         print(origin)
         pyperclip.copy(origin)
-        print("已将HTML代码输出到剪贴板")
+        print("[提醒]已将HTML代码输出到剪贴板")
     else:
         try:
             winclip.OpenClipboard()
@@ -171,22 +155,37 @@ def html_to_htmlcode():
         if text != "":
             print(text)
             pyperclip.copy(text)
-            print("已将HTML代码输出到剪贴板")
+            print("[提醒]已将HTML代码输出到剪贴板")
         else:
-            print("剪贴板内容为空或不是HTML")
+            print("[警告]剪贴板内容为空或不是HTML")
 
+'''
+# UI系统
+'''
+# 焦点进入
+def focus_in(event):
+    copyboard = hcp.DumpHtml()
+    if copyboard != "":
+        preprocess(copyboard)
+    print("[提醒]焦点进入")
+
+# 焦点离开
+def focus_out(event):
+    print("[提醒]焦点离开")
 
 # UI
 if __name__ == "__main__":
     WINDOW = Tk()
+    WINDOW.bind("<FocusIn>", focus_in)
+    WINDOW.bind("<FocusOut>", focus_out)
 
     def a_button(text: str, command):
         Button(WINDOW, text=text, command=command).pack()
 
     a_button("显示当前剪贴板源数据", clipboard_origin)
     a_button("将HTML代码输出到剪贴板", html_to_htmlcode)
-    a_button("处理果园复制的富文本", goddess_process)
-    a_button("处理DOC/RTF复制的富文本", rtf_process)
+    #a_button("处理果园复制的富文本", goddess_process)
+    #a_button("处理DOC/RTF复制的富文本", rtf_process)
     a_button("html -> 果园BBcode", html_to_bbcode)
     a_button("html -> 不全书格式", html_to_notall)
     a_button(f"保存为htm文件", save_with_template_html)
