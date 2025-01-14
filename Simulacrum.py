@@ -4,7 +4,7 @@ import pyclip
 import tkinter
 from tkinter import *
 from tkinter.ttk import *
-from tkinterweb import HtmlFrame
+#from tkinterweb import HtmlFrame
 
 import win32clipboard as winclip
 import win32con
@@ -18,11 +18,11 @@ from HTMLTagTraverse import get_page_default_name
 from HTMLPurger import purge_html
 from SummonMonster import summon_monster
 
-VERSION = "0.5β 不稳定版"
+VERSION = "0.6β 不稳定版"
 
 root: Tk #窗口本体
 BUFFER: Entry #缓冲区框
-PREVIEWER: HtmlFrame #预览区域
+#PREVIEWER: HtmlFrame #预览区域
 
 '''
 # 基础功能
