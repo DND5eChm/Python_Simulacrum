@@ -5,6 +5,8 @@ background-color: rgb(226, 244, 251)
 white-space: normal
 word-spacing: normal
 font-size: medium
+font-size: 11pt
+font-size: 16pt
 font-weight: 400
 letter-spacing: normal
 font-style: normal

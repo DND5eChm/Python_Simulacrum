@@ -76,9 +76,15 @@ def morph_brbr_to_p(br_text: str) -> str:
 # 将果园的引用文改为不全书版的小纸条栏
 def morph_quoteheader_to_quoteblock(quote_text: str) -> str:
     output: str = quote_text
-    output = re.sub(r"<div.*><div><a herf.*>引述: .*</a></div></div>","",output)
-    output = re.sub(r"<blockquote.*>","<div style=\"BORDER-TOP: black 1px solid; BORDER-RIGHT: black 1px solid; WIDTH: 600px; BORDER-BOTTOM: black 1px solid; PADDING-BOTTOM: 10px; PADDING-TOP: 10px; PADDING-LEFT: 50px; MARGIN-LEFT: 50px; BORDER-LEFT: black 1px solid; PADDING-RIGHT: 50px; BACKGROUND-COLOR: #eeeeee\">",output)
-    output = output.replace("</blockquote>","</div>")
+    output = re.sub(r"<div.*><div><a herf.*>引述:.*</a></div></div>","",output)
+    output = re.sub(r"<div.*><div>(引述:.*|引用)</div></div>","",output)
+    # 读取模板
+    template: str = ""
+    with open("template/Quote.htm","r",encoding="UTF-8") as f:
+        template = f.read()
+    template_left,template_right = template.split("{{内容}}",1)
+    output = re.sub(r"<blockquote.*>",template_left,output)
+    output = output.replace("</blockquote>",template_right)
     output = output.replace("<div><div></div></div>","")
     return output
 
