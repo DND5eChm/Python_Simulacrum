@@ -1,8 +1,10 @@
-from tkinter import Tk, Frame, Text, Button, Label, Entry, Scrollbar, filedialog, font
-from tkinter.ttk import Style, Separator
 import os
 import re
 import pyclip
+import tkinter
+from tkinter import *
+from tkinter.ttk import *
+from tkinterweb import HtmlFrame
 
 import win32clipboard as winclip
 import win32con
@@ -13,11 +15,14 @@ from FormatTrashBinner import clean_trash_format
 from BBCode import morph_html_to_bbcode
 from NotallCHM import morph_notallbook_chm_html
 from HTMLTagTraverse import get_page_default_name
+from HTMLPurger import purge_html
+from SummonMonster import summon_monster
 
 VERSION = "0.5β 不稳定版"
 
-W: Tk #窗口本体
+root: Tk #窗口本体
 BUFFER: Entry #缓冲区框
+PREVIEWER: HtmlFrame #预览区域
 
 '''
 # 基础功能
@@ -25,24 +30,26 @@ BUFFER: Entry #缓冲区框
 # 获取剪贴板源数据（不处理）
 def get_clipboard():
     data = hcp.DumpHtml()
-    if data != "":
+    if data != "" and data != "None":
         set_buffer(data)
     else:
         try:
             winclip.OpenClipboard()
             text = winclip.GetClipboardData(win32con.CF_UNICODETEXT)
+            if text != "":
+                set_buffer(text)
+            else:
+                print("[提醒]剪贴板内容为空")
+        except:
+            print("[提醒]剪贴板内容无法识别。")
         finally:
             winclip.CloseClipboard()
-        if text != "":
-            set_buffer(text)
-        else:
-            print("[提醒]剪贴板内容为空")
 
 # 预处理
 def preprocess():
     origin = get_buffer()
     print("[提醒]预处理开始")
-    output = clean_trash_format(data)
+    output = clean_trash_format(origin)
     print("[提醒]预处理完成！")
     set_buffer(output)
 
@@ -55,7 +62,20 @@ def get_buffer() -> str:
 def set_buffer(data: str):
     BUFFER.delete('1.0','end')
     BUFFER.insert("1.0",str(data))
+    # 如果可预览的话，更新预览
+    #if "<" in data:
+    #    PREVIEWER.load_html(str(data))
 
+'''
+# 转换功能
+'''
+# 将html转化为纯文本
+def html_to_text():
+    origin = get_buffer()
+    output = purge_html(origin)
+    print("[提醒]处理完成！")
+    set_buffer(output)
+    
 # 将果园文本转化为不全书html
 def html_to_notall():
     origin = get_buffer()
@@ -63,9 +83,6 @@ def html_to_notall():
     print("[提醒]处理完成！")
     set_buffer(output)
 
-'''
-# 转换功能
-'''
 # 将果园文本转化为BBcode
 def html_to_bbcode():
     origin = get_buffer()
@@ -126,7 +143,17 @@ def save():
         else:
             print("[警告]剪贴板为空/无法解析！")
 
-# 将文本转化为dnd样式的首行加粗间隔表格table
+'''
+# 文本生成器功能
+'''
+# 将文本转化为每单词首字母大写格式
+def word_capitalize():
+    origin = get_buffer()
+    output = origin.title().replace(" Of "," of ").replace(" In "," in ").replace(" The "," the ").replace(" On "," on ").replace("'S","'s").replace("'Ll","'ll").replace("'Ve","'ve")
+    print("[提醒]已全部改为首字母大写！")
+    set_buffer(output)
+
+# 将文本生成为dnd样式(隔行染色，首行加粗)表格table
 def make_table():
     origin = get_buffer()
     if origin != "":
@@ -136,6 +163,17 @@ def make_table():
         print("[提醒]表格制作完成！")
         set_buffer(output)
 
+# 将文本生成为果园怪物模板BBCode
+def make_monster_statblock():
+    origin = get_buffer()
+    if origin != "":
+        output = summon_monster(origin)
+        print("[提醒]生物数据制作完成！")
+        set_buffer(output)
+
+'''
+# 输出
+'''
 # 将缓冲区以HTML格式输出到剪贴板
 def html_output_clipboard():
     origin = get_buffer()
@@ -161,7 +199,7 @@ def text_output_clipboard():
         print("[提醒]缓冲区为空，未能复制。")
 
 '''
-# UI系统
+# UI事件
 '''
 # 焦点进入
 def on_focus_in(event):
@@ -176,32 +214,57 @@ def on_focus_in(event):
 def on_focus_out(event):
     print("[提醒]焦点离开")
 
+'''
+# UI组件
+'''
+# Style定义
+def style_init():
+    style = tkinter.ttk.Style()
+    style.configure("TFrame", background="#FCF8EC")
+    style.configure("TLabel", background="#FCF8EC",justify='left',font=("微软雅黑", 10, ""))
+    style.configure("TSeparator", background="#B79C61", height=1)
+    style.configure("TButton",background="#FCF8EC",justify='left', anchor='w',relief="flat",font=("微软雅黑", 10, ""))
+    style.configure("BTitle.TLabel", foreground="#800000", background="#FCF8EC",justify='left',font=("微软雅黑", 18, "bold"))
+    style.configure("Title.TLabel", foreground="#800000", background="#FCF8EC",justify='left',font=("微软雅黑", 11, "bold"))
+    style.configure("Buffer.TText", background="#FFFAEF",font=("", 8, ""))
+    '''
+    暂时看不懂，先放弃了
+    style.map("TButton",
+        foreground=[('!disabled','red'),('pressed', 'red'), ('active', 'blue')],
+        background=[('!disabled','red'),('pressed', '!disabled', 'black'), ('active', 'red')]
+    )
+    '''
+
+# 大标题
+def a_big_title(text: str):
+    Label(TABFRAME, text=text, justify='left',style="BTitle.TLabel").pack(padx=1,side="top",fill="x")
+    Separator(TABFRAME, orient="horizontal").pack(padx=1,side="top",fill="x")
+
+# 小标题
+def a_title(text: str):
+    Label(TABFRAME, text=text, justify='left',style="Title.TLabel").pack(padx=1,side="top",fill="x")
+    Separator(TABFRAME, orient="horizontal").pack(padx=1,side="top",fill="x")
+
+# 文本
+def a_text(text: str):
+    Label(TABFRAME, text=text, justify='left', wraplength=420).pack(padx=1,side="top",fill="x")
+
+# 按钮
+def a_button(text: str, command):
+    Button(TABFRAME, text=text, command=command, style="TButton").pack(pady=1,padx=2,side="top",fill="x")
+    #relief="ridge",bg="#FCF8EC"
+
 # UI
 if __name__ == "__main__":
-    W = Tk()
-    W.bind("<FocusIn>", on_focus_in)
-    W.bind("<FocusOut>", on_focus_out)
-    W.title("果园格式拟像术 v"+VERSION)
-    W.config(bg="#FCF8EC")
+    root = tkinter.Tk()
+    style_init()
+    root.bind("<FocusIn>", on_focus_in)
+    root.bind("<FocusOut>", on_focus_out)
+    root.title("果园格式拟像术 v"+VERSION)
+    root.config(bg="#FCF8EC")
     #W.attributes("-toolwindow", 2)
-    TABFRAME = Frame(W,width=30,bg="#FCF8EC")
+    TABFRAME = Frame(root,width=30)
     TABFRAME.pack(side="left",fill="y")
-    TITLEFONT = font.Font(weight="bold")
-    BIGTITLEFONT = font.Font(weight="bold",size="16")
-
-    def a_big_title(text: str):
-        Label(TABFRAME, text=text, justify='left',bg="#FCF8EC", anchor='w', fg="#800000", font=BIGTITLEFONT).pack(side="top",fill="x")
-        Separator(TABFRAME, orient="horizontal").pack(side="top",fill="x")
-        
-    def a_title(text: str):
-        Label(TABFRAME, text=text, justify='left',bg="#FCF8EC", anchor='w', fg="#800000", font=TITLEFONT).pack(side="top",fill="x")
-        Separator(TABFRAME, orient="horizontal").pack(side="top",fill="x")
-    
-    def a_text(text: str):
-        Label(TABFRAME, text=text, justify='left',bg="#FCF8EC", anchor='w', wraplength=420).pack(side="top",fill="x")
-    
-    def a_button(text: str, command):
-        Button(TABFRAME, text=text, command=command,relief="ridge", justify='left', anchor='w',bg="#FCF8EC").pack(pady=1,padx=2,side="top",fill="x")
 
     #显示界面
     a_big_title("功能 Traits")
@@ -210,21 +273,27 @@ if __name__ == "__main__":
     a_button("测试A。获取剪贴板源数据。",get_clipboard)
     a_button("测试B。预处理当前数据。",preprocess)
     a_title("处理 Process")
-    a_button("制表符猛击。拟像术将现有文本转化为一张html格式的表格(用|或TAB分隔)。", make_table)
-    a_button("果园侵袭。拟像术将现有html内容转换为果园BBcode。", html_to_bbcode)
-    a_button("残缺·不全。拟像术将现有html内容转换为不全书或残缺大典的格式。", html_to_notall)
+    a_button("净化。删除现有文本的所有html标签", html_to_text)
+    a_button("处决不大写者。将现有文本转化为首字母大写的格式。", word_capitalize)
+    a_button("制表符猛击。将现有文本转化为一张DND风格的html格式的表格(用|或TAB分隔)。", make_table)
+    a_button("怪物创成。将现有文本转化为果园的东风5E怪物数据卡。", make_monster_statblock)
+    a_button("果园侵袭。将现有html内容转换为果园BBcode。", html_to_bbcode)
+    a_button("残缺·不全。将现有html内容转换为不全书或残缺大典的格式。", html_to_notall)
     a_title("输出 Output")
-    a_button("HTML。将数据转化为HTML代码，输出到剪贴板。", html_output_clipboard)
+    a_button("HTML。将现有文本转化为HTML代码，输出到剪贴板。", html_output_clipboard)
     a_button("文本。将文本输出到剪贴板。", text_output_clipboard)
     a_title("存储 Save")
-    a_button("HTML文件。拟像术将现有内容保存为一个由你指定的htm文件。", save_with_template_html)
-    a_button("TXT文件。拟像术将现有内容保存为一个由你指定的txt文件。", save)
+    a_button("HTML文件。将现有内容保存为一个由你指定的.htm或.html文件。", save_with_template_html)
+    a_button("文本文件。将现有内容保存为output.txt。", save)
     
     #缓冲区
     Separator(TABFRAME, orient="vertical").pack(fill="y")
-    scrollbar = Scrollbar(W, orient='vertical')
+    scrollbar = Scrollbar(root, orient='vertical')
     scrollbar.pack(side="right", fill='y')
-    BUFFER = Text(W,width=60,height=50,bg="#FFFAEF",wrap="char", yscrollcommand=scrollbar.set)
+    BUFFER = Text(root,width=80,height=50,wrap="char", yscrollcommand=scrollbar.set)
     BUFFER.pack(side="right",fill="both", expand=True)
     scrollbar.config(command=BUFFER.yview)
-    W.mainloop()
+    
+    #PREVIEWER = HtmlFrame(root,width=20)
+    #PREVIEWER.pack(side="right",fill='y')
+    root.mainloop()
