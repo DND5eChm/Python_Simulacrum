@@ -13,14 +13,22 @@ mso-bidi-font-family:Arial
 font-weight:normal
 text-indent:10.5000pt
 text-indent:10.5pt
+text-align:left
 mso-char-indent-count:1.0000
 mso-themecolor:accent4
 mso-bidi-language:AR-SA
 mso-fareast-language:ZH-CN
 mso-ansi-language:EN-US
 mso-ligatures:none
+font-family:宋体
+font-family:Calibri
+mso-fareast-font-family:宋体
+mso-ascii-font-family:'Times New Roman'
 mso-bidi-theme-font:minor-bidi
-mso-bidi-font-family:"Times New Roman"
+mso-bidi-font-family:'Times New Roman'
+mso-hansi-font-family:'Times New Roman'
+mso-hansi-font-family:Calibri
+mso-ascii-font-family:Calibri
 mso-hansi-theme-font:minor-latin
 mso-ascii-theme-font:minor-latin
 mso-bidi-font-size:11.0pt
@@ -30,3 +38,15 @@ mso-outline-level:4
 mso-outline-level:3
 mso-outline-level:2
 mso-outline-level:1
+mso-pagination:none
+mso-border-left-alt:none
+border-right:none
+mso-border-right-alt:none
+border-top:none;mso-border-top-alt:none
+border-bottom:none
+border-top:none
+border-left:none
+border-right:none
+border:none;
+mso-border-bottom-alt:none
+mso-border-top-alt:none

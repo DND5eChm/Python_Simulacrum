@@ -21,9 +21,10 @@ def clean_trash_format(trash_text: str,using: str = "auto") -> str:
         print("[错误]无法加载垃圾格式处理集"+using+".txt")
         return trash_text
     # 处理前删除
-    print("[提示]删除垃圾格式流程开始")
+    print("[提示]删除垃圾格式流程开始，使用处理集"+using)
     output = output.replace("\r"," ")
     output = output.replace("\n","")
+    output = output.replace(": ",":")
     output = output.replace("<o:p>","")
     output = output.replace("</o:p>","")
     # 更聪明的处理方式
@@ -76,6 +77,15 @@ def clean_trash_format(trash_text: str,using: str = "auto") -> str:
     output = output.replace("</strong><strong>","")
     output = output.replace("</i><i>","")
     output = output.replace("</em><em>","")
+    output = output.replace(".0000pt","pt")
+    output = output.replace("000pt","0pt")
+    # 添加一些便于观看的换行符
+    output = output.replace("</span>","</span>\n")
+    output = output.replace("</div>","</div>\n")
+    output = output.replace("</p>","</p>\n")
+    output = output.replace("</tr>","</tr>\n")
+    output = output.replace("</table>","</table>\n")
+    output = output.replace("</quote>","</quote>\n")
     return output
 
 # 识别垃圾格式类型
@@ -83,7 +93,7 @@ def garbage_sorting(trash_text:str) -> str:
     if "background-color: rgb(209, 234, 247)" in trash_text or "background-color: rgb(226, 244, 251)" in trash_text:
         print("[提醒]已发现垃圾格式特征：从纯美苹果园复制的内容")
         return "goddess"
-    elif "mso-spacerun" in trash_text or "mso-outline-level" in trash_text:
+    elif "mso-" in trash_text:
         print("[提醒]已发现垃圾格式特征：Word等文件")
         return "rtf"
     else:

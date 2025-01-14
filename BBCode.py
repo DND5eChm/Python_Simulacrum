@@ -1,5 +1,6 @@
 
 from HTMLTagTraverse import htmltag, find_tag_pair, translate_html_entity
+from Tools import rgb_to_hex
 
 SAMEWORDS: dict[str, str] = {
     "strong" : "b",
@@ -23,7 +24,7 @@ def morph_html_to_bbcode(html_text: str) -> str:
             print("——"+output[start_left:start_right+1]+"  "+output[end_left:end_right+1])
             tag.tag_class = ""
             bbcode_start = ""
-            bbcode_content = output[start_right+1:end_left]
+            bbcode_content = output[start_right+1:end_left].strip()
             bbcode_end = ""
             if tag.tag_name == "img":
                 bbcode_start = bbcode_start + "[img]"
@@ -32,11 +33,26 @@ def morph_html_to_bbcode(html_text: str) -> str:
             else:
                 if tag.tag_name in SAMEWORDS.keys():
                     tag.tag_name = SAMEWORDS[tag.tag_name]
-                if tag.tag_name in ["quote","b","i","s","table","tr","td","sup","sub","tt","list","li"]:
+                if tag.tag_name in ["b","i","s","sup","sub","tt"]: #无内容则删除
+                    if bbcode_content.strip() == "": #空白内容则不做code
+                        bbcode_start = ""
+                        bbcode_content = bbcode_content
+                        bbcode_end = ""
+                    else:
+                        bbcode_start = bbcode_start + f"[{tag.tag_name}]"
+                        bbcode_end = f"[/{tag.tag_name}]" + bbcode_end
+                elif tag.tag_name in ["td"]: #去换行
                     bbcode_start = bbcode_start + f"[{tag.tag_name}]"
                     bbcode_end = f"[/{tag.tag_name}]" + bbcode_end
+                    bbcode_content = bbcode_content.strip()
+                elif tag.tag_name in ["quote","table","list"]: #首尾换行
+                    bbcode_start = bbcode_start + f"[{tag.tag_name}]\n"
+                    bbcode_end = f"[/{tag.tag_name}]\n" + bbcode_end
+                elif tag.tag_name in ["tr","li"]: #末尾换行
+                    bbcode_start = bbcode_start + f"[{tag.tag_name}]"
+                    bbcode_end = f"[/{tag.tag_name}]\n" + bbcode_end
                 elif tag.tag_name == "p":
-                    bbcode_end = bbcode_end + "\n"
+                    bbcode_content = bbcode_content + "\n"
                 elif tag.tag_align != "":
                     bbcode_start = bbcode_start + f"[{tag.tag_align}]"
                     bbcode_end = f"[/{tag.tag_align}]" + bbcode_end
@@ -50,21 +66,21 @@ def morph_html_to_bbcode(html_text: str) -> str:
                 for style in tag.tag_style:
                     if ":" in style:
                         style_name, style_config = style.split(":")
-                        style_name = style_name.strip()
-                        style_config = style_config.strip()
+                        style_name = style_name.strip().lower()
+                        style_config = style_config.strip().lower()
                         if style_name == "color":
+                            if style_config.startswith("rgb("):
+                                style_config = rgb_to_hex(style_config)
                             bbcode_start = bbcode_start + "[color="+style_config+"]"
                             bbcode_end = "[/color]" + bbcode_end
                         elif style_name in ["font-size","mso-bidi-font-size"]:
-                            try:
-                                if style_config.endswtih("pt"):
-                                    style_config = str(int(float(style_config[:-2])))+"pt"
-                                elif style_config.endswtih("px"):
-                                    style_config = str(int(float(style_config[:-2])))+"px"
-                                else:
-                                    style_config = str(int(float(style_config)))
-                            except:
-                                style_config = style_config.replace(".0000","")
+                            for unit in ["pt","px"]:
+                                if style_config.endswith(unit):
+                                    size = style_config[:-len(unit)]
+                                    if "." in size:
+                                        size = size.split(".")[0]
+                                    if size.isdigit():
+                                        style_config = str(int(size))+unit
                             bbcode_start = bbcode_start + f"[size={style_config}]"
                             bbcode_end = "[/size]" + bbcode_end
                         elif style_name == "text-decoration":
@@ -88,4 +104,7 @@ def morph_html_to_bbcode(html_text: str) -> str:
             cursor = start_left
         else:
             break
+        
+        #特殊处理，防止表格乱换行现象
+        output = output.replace("\n[/td]","[/td]")
     return translate_html_entity(output)

@@ -58,14 +58,14 @@ class htmltag:
                 if cursor_right != -1:
                     return tag_informations[cursor_left+length+2:cursor_right]
                 else:
-                    print("发现未闭合的标签")
+                    print("[警告]发现未闭合的参数")
                     return ""
             else:
                 cursor_right = tag_informations.find(" ",cursor_left+length+1)
                 if cursor_right == -1:
                     return tag_informations[cursor_left+length+1:cursor_right]
                 else:
-                    return tag_informations[cursor_left+length+1:]
+                    return ""
         return ""
      
     def output(self) -> str:
