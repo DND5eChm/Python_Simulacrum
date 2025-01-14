@@ -164,16 +164,21 @@ class Monster:
         top = 0
         found = False
         for line in content_lines:
-            if line.lower().startswith("挑战等级") or line.lower().startswith("cr") or line.lower().startswith("challenge"):
+            line_str = line.strip().lower()
+            if line_str.startswith("挑战等级") or line_str.startswith("cr") or line_str.startswith("challenge"):
                 top = top + 1
                 break
+            if line_str.startswith("特质") or line_str.startswith("动作") or line_str.startswith("附赠动作"):
+                break
             top = top + 1
-        if len(content_lines) >= top:
+        if len(content_lines) > top:
             if content_lines[top].strip() == "": # 如果空了一大行那必定是了
                 found = True
-                if len(content_lines) > top:
+                if len(content_lines) > top+1:
                     top = top+1 #略过这行
             elif content_lines[top].startswith("特性") or content_lines[top+1].startswith("特质"): # 特性/特质打头？那你也是了
+                found = True
+            elif content_lines[top].startswith("动作") or content_lines[top+1].startswith("附赠动作"): # 动作/附赠动作打头？那你也是了
                 found = True
         else:
             return []
@@ -186,7 +191,7 @@ class Monster:
                     print("    "+line)
                     outputs.append(line.strip())
             return outputs
-            
+        return []
 
 # 使用模板生成怪物数据块
 def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
