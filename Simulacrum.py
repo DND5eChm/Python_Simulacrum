@@ -58,6 +58,8 @@ def preprocess():
 # 获取缓冲区数据
 def get_buffer() -> str:
     output = BUFFER.get('0.0','end').strip()
+    if chr(65279) in output:
+        output = output.replace(chr(65279),"")
     return output
 
 # 设置缓冲区数据

@@ -181,7 +181,9 @@ class Monster:
                             right = thing.find(" ")
                             if thing[:right].isdigit(): 
                                 output = thing
-                        elif thing.isdigit(): #只写了数值没打括号？
+                        elif thing.isdigit():
+                                output = thing
+                        elif len(thing) > 1 and (thing.startswith("+") or thing.startswith("-")) and thing[1:].isdigit():
                                 output = thing
                 
                 # 其他常规栏
@@ -250,9 +252,9 @@ class Monster:
         
         #返回分割后的数据
         if found:
-            print("[提醒]分割位置："+lines[p_split-1])
-            print("[提醒]          ————————————")
-            print("[提醒]          "+lines[p_split])
+            print("                  "+lines[p_split-1])
+            print("[提醒]分割位置：————————————")
+            print("                  "+lines[p_split])
             return lines[:p_split],lines[p_split:]
         else:
             print("[警告]未能找到怪物数据。")
@@ -357,9 +359,9 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                             pattern_now = True
                         elif char in [")","）"]:
                             pattern_now = False
-                        else: #不符合上述特征，即为中文字符
+                        elif not pattern_now: #不符合上述特征，即为中文字符
                             cnwords = cnwords + 1
-                            if not pattern_now and en_now:
+                            if en_now:
                                 sus = True #你小子先英文再中文，很可疑啊
                                 en_now = False
                     if cnwords >= 1 and cnwords <= 8 and enwords >= 3:#动作英文里最短的Ram都有3个字,最短的中文是1个字,最长的中文都只有8个字
@@ -367,7 +369,8 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                             for sus_word in ["可以","长休","短休","使用次数","目标","必须","否则","失败","成功","攻击","豁免"]:
                                 if sus_word in action_name:
                                     result = content_line
-                        if result == "": #诶你小子真的这个神经病结构啊
+                        #如果到现在还没处理出文本，说明完美符合动作项的结构
+                        if result == "": 
                             action_content = content_line[right+1:]
                             result = template_actionlabel.replace("{{名称}}",action_name).replace("{{内容}}",action_content)
                             print("[提醒]发现动作项："+action_name)

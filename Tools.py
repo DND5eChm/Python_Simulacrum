@@ -3,17 +3,13 @@ import re
 # 清除html中的所有标签并保留“有效换行”
 def purge_html(content: str) -> str:
     output = content.strip().replace("\r\n","").replace("\n","")
-    output = re.compile(r'</h[1234]>', re.S|re.IGNORECASE).sub("\n", output)
-    output = re.compile(r'</p>', re.S|re.IGNORECASE).sub("\n", output)
-    output = re.compile(r'</tr>', re.S|re.IGNORECASE).sub("\n", output)
-    output = re.compile(r'<li.*?>', re.S|re.IGNORECASE).sub("\n", output)
+    output = re.compile(r'<(br|/tr|/p|/h[1234]).*?>', re.S|re.IGNORECASE).sub("\n", output)
     output = re.compile(r'<blockquote.*?>', re.S|re.IGNORECASE).sub("\n\n", output)
     output = re.compile(r'<li.*?>', re.S|re.IGNORECASE).sub("\n· ", output)
-    output = re.compile(r'<br>', re.S|re.IGNORECASE).sub("\n", output)
     output = re.compile(r'<[^>]+>', re.S|re.IGNORECASE).sub("", output)
     
     #去除前后神秘空格
-    output = "\n".join([line.strip() for line in output.strip()])
+    output = "\n".join([line.strip() for line in output.splitlines()])
     
     return output
 
