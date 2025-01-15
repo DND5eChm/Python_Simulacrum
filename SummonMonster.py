@@ -1,41 +1,42 @@
 
 class Monster:
-    def __init__(self, content):
+    def __init__(self, data):
         print("[提醒]开始处理怪物数据")
+        #分割数据
+        self.stats, self.contents = self.split_stat_and_content(data)
         #寻找数据
-        content_lines = content.splitlines()
-        self.title = self.find_first_line(content_lines)
-        self.subtitle = self.find_second_line(content_lines)
-        self.hp = self.find_data_line(content_lines,["生命值","hp"],"pattern")
-        self.initiative = self.find_data_line(content_lines,["先攻","init","initiative"],"pattern")
-        self.ac = self.find_data_line(content_lines,["护甲等级","ac"],"pattern")
-        self.speed = self.find_data_line(content_lines,["速度","speed"])
+        self.title = self.find_first_line()
+        self.subtitle = self.find_second_line()
+        self.hp = self.find_stat_line(["生命值","hp"],"pattern")
+        self.initiative = self.find_stat_line(["先攻","init","initiative"],"pattern")
+        self.ac = self.find_stat_line(["护甲等级","ac"],"pattern")
+        self.speed = self.find_stat_line(["速度","speed"])
         
-        self.str = self.find_data_line(content_lines,["力量","str"],"attr").split("|")
-        self.dex = self.find_data_line(content_lines,["敏捷","dex"],"attr").split("|")
-        self.con = self.find_data_line(content_lines,["体质","con"],"attr").split("|")
-        self.int = self.find_data_line(content_lines,["智力","int"],"attr").split("|")
-        self.wis = self.find_data_line(content_lines,["感知","wis"],"attr").split("|")
-        self.cha = self.find_data_line(content_lines,["魅力","cha"],"attr").split("|")
+        self.str = self.find_stat_line(["力量","str"],"attr").split("|")
+        self.dex = self.find_stat_line(["敏捷","dex"],"attr").split("|")
+        self.con = self.find_stat_line(["体质","con"],"attr").split("|")
+        self.int = self.find_stat_line(["智力","int"],"attr").split("|")
+        self.wis = self.find_stat_line(["感知","wis"],"attr").split("|")
+        self.cha = self.find_stat_line(["魅力","cha"],"attr").split("|")
         
-        self.skill = self.find_data_line(content_lines,["技能","skill"])
-        self.save = self.find_data_line(content_lines,["豁免","save"])
-        self.resistance = self.find_data_line(content_lines,["伤害抗性","抗性","damage resisitance","resistance"])
-        self.damage_immune = self.find_data_line(content_lines,["伤害免疫","damage immune"])
-        self.condition_immune = self.find_data_line(content_lines,["状态免疫","condition immune"])
+        self.skill = self.find_stat_line(["技能","skill"])
+        self.save = self.find_stat_line(["豁免","save"])
+        self.resistance = self.find_stat_line(["伤害抗性","抗性","damage resisitance","resistance"])
+        self.damage_immune = self.find_stat_line(["伤害免疫","damage immune"])
+        self.condition_immune = self.find_stat_line(["状态免疫","condition immune"])
         if self.damage_immune == "" and self.condition_immune == "":
-            self.immune = self.find_data_line(content_lines,["免疫","immune"])
+            self.immune = self.find_stat_line(["免疫","immune"])
         elif self.damage_immune == "":
             self.immune = self.condition_immune
         elif self.condition_immune == "":
             self.immune = self.damage_immune
         else:
             self.immune = self.damage_immune+"；"+self.condition_immune
-        self.gears = self.find_data_line(content_lines,["装备","gears"])
-        self.sense = self.find_data_line(content_lines,["感官","sense"])
-        self.lang = self.find_data_line(content_lines,["语言","language"])
-        self.cr = self.find_data_line(content_lines,["挑战等级","cr","challenge"])
-        self.contents = self.find_rest(content_lines)
+        self.gears = self.find_stat_line(["装备","gears"])
+        self.sense = self.find_stat_line(["感官","sense"])
+        self.lang = self.find_stat_line(["语言","language"])
+        self.cr = self.find_stat_line(["挑战等级","cr","challenge"])
+        
         
         #处理旧版豁免
         if self.save != "":
@@ -86,27 +87,29 @@ class Monster:
                 init_var = init_var + int(dex_mod)
             self.initiative = self.dex[1]+"（"+str(init_var)+"）"
     
-    def find_first_line(self,content_lines):
-        for line in content_lines:
+    #寻找第一行
+    def find_first_line(self):
+        for line in self.stats:
             if line.strip() != "":
                 return line.strip()
-                
-    def find_second_line(self,content_lines):
+    
+    #寻找第二行
+    def find_second_line(self):
         count = 0
-        for line in content_lines:
+        for line in self.stats:
             if line.strip() != "":
                 if count == 0:
                     count = 1
                 else:
                     return line.strip()
-                    
-    def find_data_line(self,content_lines:list[str],data_prefixs:list[str],data_type:str=""):
-        #print("[提醒]开始寻找"+data_prefixs[0])
+    
+    #寻找数据
+    def find_stat_line(self,data_prefixs:list[str],data_type:str=""):
         mustbe = []
         possible = []
         possible_low = []
         fake_words = ["，","（","(","或","检","减","豁"] #后面出现这些字说明不是data_line
-        for line in content_lines:
+        for line in self.stats:
             for prefix in data_prefixs:
                 if line.lower().startswith(prefix): #开头匹配，最优的情况
                     if line[len(prefix)] in [" ",":","："]: #完美匹配，加入肯定列表
@@ -205,39 +208,55 @@ class Monster:
             return "10|+0|+0"
         return ""
     
-    def find_rest(self,content_lines:list[str]):
-        #print("[提醒]开始寻找剩余数据")
-        top = 0
+    # 分割数据区域与特质动作区域
+    def split_stat_and_content(self,data:str):
+        lines = []
+        for raw_line in data.splitlines():
+            line = raw_line.strip()
+            if line != "":
+                lines.append(line)
+        #寻找分割位置
+        p_split = 0
         found = False
-        for line in content_lines:
-            line_str = line.strip().lower()
+        for line in lines:
+            line_str = line.lower()
+            #根据行开头判断是否是分割点
             if line_str.startswith("挑战等级") or line_str.startswith("cr") or line_str.startswith("challenge"):
-                top = top + 1
+                #下一行上方必是分割线
+                p_split = p_split + 1
+                found = True
                 break
-            if line_str.startswith("特质") or line_str.startswith("动作") or line_str.startswith("附赠动作"):
+            elif line_str.startswith("特质") or line_str.startswith("动作") or line_str.startswith("附赠动作"):
+                #这一行上方就是分割线
+                found = True
                 break
-            top = top + 1
-        if len(content_lines) > top:
-            if content_lines[top].strip() == "": # 如果空了一大行那必定是了
-                found = True
-                if len(content_lines) > top+1:
-                    top = top+1 #略过这行
-            elif content_lines[top].startswith("特性") or content_lines[top+1].startswith("特质"): # 特性/特质打头？那你也是了
-                found = True
-            elif content_lines[top].startswith("动作") or content_lines[top+1].startswith("附赠动作"): # 动作/附赠动作打头？那你也是了
-                found = True
-        else:
-            return []
+            p_split = p_split + 1
+        # 没找到？怎么可能，换个方式再试一次
+        if not found:
+            p_split = 0
+            for line in lines:
+                line_str = line.lower()
+                #根据特征判断是否是分割点
+                if "xp" in line_str or "熟练加值" in line_str or "pb" in line_str:
+                    #下一行上方可能分割线
+                    p_split = p_split + 1
+                    found = True
+                    break
+                elif "。" in line_str and len(line) >= 30: # 超过30字符，还不满足上述任何条件的情况下，只能当它是了
+                    #这一行上方就是分割线
+                    found = True
+                    break
+                p_split = p_split + 1
         
+        #返回分割后的数据
         if found:
-            outputs = []
-            print("[提醒]找到怪物余下数据：")
-            for line in content_lines[top:]:
-                if line.strip() != "":
-                    print("    "+line)
-                    outputs.append(line.strip())
-            return outputs
-        return []
+            print("[提醒]分割位置："+lines[p_split-1])
+            print("[提醒]          ————————————")
+            print("[提醒]          "+lines[p_split])
+            return lines[:p_split],lines[p_split:]
+        else:
+            print("[警告]未能找到怪物数据。")
+            return ["未知","未知"],[]
 
 # 使用模板生成怪物数据块
 def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
@@ -247,8 +266,9 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     template_subtitle = ""
     template_statlabel = ""
     template_actionlabel = ""
+    template_normallabel = ""
+    template_spelllabel = ""
     template_italic = ""
-    template_spell = ""
     with open(f"template/{template_folder}/Base.htm", "r") as f:
         base = f.read()
     with open(f"template/{template_folder}/SubTitle.htm", "r") as f:
@@ -257,10 +277,12 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         template_statlabel = f.read()
     with open(f"template/{template_folder}/ActionLabel.htm", "r") as f:
         template_actionlabel = f.read()
+    with open(f"template/{template_folder}/SpellLabel.htm", "r") as f:
+        template_spelllabel = f.read()
+    with open(f"template/{template_folder}/NormalLabel.htm", "r") as f:
+        template_normallabel = f.read()
     with open(f"template/{template_folder}/Italic.htm", "r") as f:
         template_italic = f.read()
-    with open(f"template/{template_folder}/Spell.htm", "r") as f:
-        template_spell = f.read()
     
     # 识别内容
     #try:
@@ -314,7 +336,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                     break
             for word in ["随意","任意","每项1/日","每项2/日","每项3/日","1/日","2/日","3/日"]:
                 if content_line.startswith(word+":") or content_line.startswith(word+"："):
-                    result = template_spell.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
+                    result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
                     print("[提醒]发现法术行："+content_line.strip())
                     break
             if result == "":
@@ -347,20 +369,22 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                                     result = content_line
                         if result == "": #诶你小子真的这个神经病结构啊
                             action_content = content_line[right+1:]
-                            for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","成功或失败"],["失败"],["成功"]]:
-                                for word in words: #每组仅匹配一次
-                                    if (word+":") in action_content:
-                                        action_content = action_content.replace(word+":",template_italic.replace("{{内容}}",word+"："),1)
-                                        break
-                                    elif (word+"：") in action_content:
-                                        action_content = action_content.replace(word+"：",template_italic.replace("{{内容}}",word+"："),1)
-                                        break
                             result = template_actionlabel.replace("{{名称}}",action_name).replace("{{内容}}",action_content)
                             print("[提醒]发现动作项："+action_name)
                     else:
-                        result = content_line        
+                        result = template_normallabel.replace("{{内容}}",content_line)
                 else:
                     result = content_line
+                
+                #给特殊文本词汇加斜体
+                for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","成功或失败"],["失败"],["成功"]]:
+                    for word in words: #每组仅匹配一次
+                        if (word+":") in result:
+                            result = result.replace(word+":",template_italic.replace("{{内容}}",word+"："),1)
+                            break
+                        elif (word+"：") in result:
+                            result = result.replace(word+"：",template_italic.replace("{{内容}}",word+"："),1)
+                            break
             # 加入内容列表
             if result != "":
                 contents.append(result)
