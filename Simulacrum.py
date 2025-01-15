@@ -4,6 +4,7 @@ import pyclip
 import tkinter
 from tkinter import *
 from tkinter.ttk import *
+from tkinter import filedialog
 #from tkinterweb import HtmlFrame
 
 import win32clipboard as winclip
@@ -11,11 +12,12 @@ import win32con
 import HTMLClipboard as hcp
 import AutoTabler as atr
 
+from Tools import purge_html
+
 from FormatTrashBinner import clean_trash_format
 from BBCode import morph_html_to_bbcode
 from NotallCHM import morph_notallbook_chm_html
 from HTMLTagTraverse import get_page_default_name
-from HTMLPurger import purge_html
 from SummonMonster import summon_monster
 
 VERSION = "0.6β 不稳定版"
@@ -116,7 +118,7 @@ def save_with_template_html():
                 "{{标题}}", output_name))
         print("[提醒]已保存！")
     else:
-        print("[警告]剪贴板为空/不是HTML！")
+        print("[警告]缓冲区为空！")
 
 # 保存
 def save():
@@ -128,20 +130,7 @@ def save():
             f.write(origin)
         print("[提醒]已保存！")
     else:
-        text = ""
-        try:
-            winclip.OpenClipboard()
-            text = winclip.GetClipboardData(win32con.CF_UNICODETEXT)
-        finally:
-            winclip.CloseClipboard()
-        if text != "":
-            if not os.path.exists("output"):
-                os.makedirs("output")
-            with open("output/output.txt", "w", encoding="UTF-8") as f:
-                f.write(text)
-                print("[提醒]已保存！")
-        else:
-            print("[警告]剪贴板为空/无法解析！")
+        print("[警告]缓冲区为空！")
 
 '''
 # 文本生成器功能
@@ -157,20 +146,27 @@ def word_capitalize():
 def make_table():
     origin = get_buffer()
     if origin != "":
-        output = origin.replace("<br>", "\n")
-        output = re.compile(r'<[^>]+>', re.S).sub("", output)
-        output = atr.make_table(output)
+        #output = origin.replace("<br>", "\n")
+        #output = re.compile(r'<[^>]+>', re.S).sub("", output)
+        output = atr.make_table(origin)
         print("[提醒]表格制作完成！")
         set_buffer(output)
 
 # 将文本生成为果园怪物模板BBCode
-def make_monster_statblock():
+def make_monster_statblock_bbc():
     origin = get_buffer()
     if origin != "":
-        output = summon_monster(origin)
+        output = summon_monster(origin,"Goddess5EMonster")
         print("[提醒]生物数据制作完成！")
         set_buffer(output)
 
+# 将文本生成为不全书怪物模板html
+def make_monster_statblock():
+    origin = get_buffer()
+    if origin != "":
+        output = summon_monster(origin,"Notall5EMonster")
+        print("[提醒]生物数据制作完成！")
+        set_buffer(output)
 '''
 # 输出
 '''
@@ -276,7 +272,8 @@ if __name__ == "__main__":
     a_button("净化。删除现有文本的所有html标签", html_to_text)
     a_button("处决不大写者。将现有文本转化为首字母大写的格式。", word_capitalize)
     a_button("制表符猛击。将现有文本转化为一张DND风格的html格式的表格(用|或TAB分隔)。", make_table)
-    a_button("怪物创成。将现有文本转化为果园的东风5E怪物数据卡。", make_monster_statblock)
+    a_button("怪物创成·升华。将现有文本转化为果园的东风5E2024怪物数据卡。", make_monster_statblock_bbc)
+    a_button("怪物创成·沉降。将现有文本转化为不全书的5E2024怪物数据卡。", make_monster_statblock)
     a_button("果园侵袭。将现有html内容转换为果园BBcode。", html_to_bbcode)
     a_button("残缺·不全。将现有html内容转换为不全书或残缺大典的格式。", html_to_notall)
     a_title("输出 Output")

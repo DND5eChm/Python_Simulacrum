@@ -1,0 +1,19 @@
+import zipfile
+import os
+
+from Simulacrum import VERSION
+
+def add_folder_to_zip(zip_file, folder_name):
+    for root, dirs, files in os.walk("./"+folder_name):
+        for file in files:
+            file_path = os.path.join(root, file)
+            zip_file.write(file_path)
+
+#创建压缩包并删除
+if __name__ == "__main__":
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    with zipfile.ZipFile("output/果园拟像术 "+VERSION+".zip", 'w') as _z:
+        _z.write("./dist/Simulacrum.exe","./Simulacrum.exe")
+        add_folder_to_zip(_z,"template")
+        add_folder_to_zip(_z,"trash_styles")
