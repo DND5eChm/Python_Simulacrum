@@ -73,19 +73,10 @@ def clean_trash_format(trash_text: str,using: str = "auto") -> str:
             print("[提醒]垃圾格式处理完成")
             break;
     # 处理后删除
-    output = output.replace("</b><b>","")
-    output = output.replace("</strong><strong>","")
-    output = output.replace("</i><i>","")
-    output = output.replace("</em><em>","")
-    output = output.replace(".0000pt","pt")
-    output = output.replace("000pt","0pt")
+    output = re.compile(r'<(b|strong|i|em|u)></\1>', re.S|re.IGNORECASE).sub(r'\1', output)
+    output = re.compile(r'\.*0+pt', re.S|re.IGNORECASE).sub('pt', output)
     # 添加一些便于观看的换行符
-    output = output.replace("</span>","</span>\n")
-    output = output.replace("</div>","</div>\n")
-    output = output.replace("</p>","</p>\n")
-    output = output.replace("</tr>","</tr>\n")
-    output = output.replace("</table>","</table>\n")
-    output = output.replace("</quote>","</quote>\n")
+    output = re.compile(r'</(span|div|p|tr|table|quote)>', re.S|re.IGNORECASE).sub(r'</\1>\n', output)
     return output
 
 # 识别垃圾格式类型

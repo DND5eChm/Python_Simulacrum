@@ -50,3 +50,9 @@ border-right:none
 border:none;
 mso-border-bottom-alt:none
 mso-border-top-alt:none
+mso-pagination:widow-orphan
+mso-para-margin-left:2.0000gd
+mso-margin-top-alt:auto
+mso-margin-bottom-alt:auto
+text-justify:inter-ideograph
+mso-bidi-font-weight:normal

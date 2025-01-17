@@ -2,4 +2,5 @@ Pyinstaller -F Simulacrum.py
 Python Packer.py
 rd /s /q .\dist
 rd /s /q .\build
+rd /f /s /q .\Simulacrum.spec
 pause

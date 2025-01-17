@@ -1,6 +1,6 @@
-
 from HTMLTagTraverse import htmltag, find_tag_pair, translate_html_entity
 from Tools import rgb_to_hex
+import re
 
 SAMEWORDS: dict[str, str] = {
     "strong" : "b",
@@ -18,10 +18,38 @@ def morph_html_to_bbcode(html_text: str) -> str:
     output = output.replace("\n"," ")
     output = output.replace("<br>","\n")
     output = output.replace("!important","")
+    
+    font_sizes_in_page = {}
+    base_font_size = {} #单位为px或1/2pt
+    #获取基准字体大小
+    matcher = re.compile(r"(?<=font-size:)[0-9\.]*(px|pt)", re.S|re.IGNORECASE)
+    for match in matcher.finditer(output):
+        text = match.group()
+        text = str(float(text[:-2]))+text[-2:]
+        if text not in font_sizes_in_page.keys():
+            font_sizes_in_page[text] = 1
+        else:
+            font_sizes_in_page[text] = font_sizes_in_page[text] + 1
+    if len(font_sizes_in_page) > 0:
+        max_appears = max(font_sizes_in_page.values())
+        for font_size,appears in font_sizes_in_page.items():
+            if appears == max_appears:
+                if font_size.endswith("pt"):
+                    base_font_size["pt"] = float(font_size[:-2])
+                    base_font_size["px"] = base_font_size["pt"] * 0.75
+                else: #if font_size.endswith("px"):
+                    base_font_size["px"] = float(font_size[:-2])
+                    base_font_size["pt"] = base_font_size["px"] * 1.3333
+                break
+    else:
+        base_font_size["px"] = 10
+        base_font_size["pt"] = 10
+        
+    #开始处理
     while(True):
         tag, start_left, start_right, end_left, end_right = find_tag_pair(output,cursor)
         if start_left != -1 and start_right != -1 and end_left != -1 and end_right != -1:
-            print("——"+output[start_left:start_right+1]+"  "+output[end_left:end_right+1])
+            #print("——"+output[start_left:start_right+1]+"  "+output[end_left:end_right+1])
             tag.tag_class = ""
             bbcode_start = ""
             bbcode_content = output[start_right+1:end_left].strip()
@@ -76,11 +104,10 @@ def morph_html_to_bbcode(html_text: str) -> str:
                         elif style_name in ["font-size","mso-bidi-font-size"]:
                             for unit in ["pt","px"]:
                                 if style_config.endswith(unit):
-                                    size = style_config[:-len(unit)]
-                                    if "." in size:
-                                        size = size.split(".")[0]
-                                    if size.isdigit():
-                                        style_config = str(int(size))+unit
+                                    size_str = style_config[:-len(unit)]
+                                    size = float(size_str) / base_font_size[unit]
+                                    style_config = str(int(size))+unit
+                            print(style_config)
                             bbcode_start = bbcode_start + f"[size={style_config}]"
                             bbcode_end = "[/size]" + bbcode_end
                         elif style_name == "text-decoration":
@@ -100,9 +127,12 @@ def morph_html_to_bbcode(html_text: str) -> str:
                             
             
             output = output[0:start_left]+bbcode_start+bbcode_content+bbcode_end+output[end_right+1:]
-            #print(bbcode_start+bbcode_content+bbcode_end)
+            print("[Start]"+bbcode_start)
+            print("[Content]"+bbcode_content)
+            print("[End]"+bbcode_end)
             cursor = start_left
         else:
+            print("[提醒]全部html标签已处理完毕")
             break
         
         #特殊处理，防止表格乱换行现象
