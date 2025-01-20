@@ -46,13 +46,16 @@ def GetHtml():
         return None
 
 
-def PutHtml(fragment):
+def PutHtml(fragment,test:bool = False):
     """
     Put the given fragment into the clipboard.
     Convenience function to do the most common operation
     """
     cb = HtmlClipboard()
-    cb.PutFragment(fragment)
+    if test:
+        cb.PutFragmentTest(fragment)
+    else:
+        cb.PutFragment(fragment)
 
 
 #---------------------------------------------------------------------------
@@ -65,6 +68,14 @@ class HtmlClipboard:
         "Version:1.0\r\n" \
         "StartHTML:%09d\r\n" \
         "EndHTML:%09d\r\n" \
+        "StartFragment:%09d\r\n" \
+        "EndFragment:%09d\r\n" \
+        "StartSelection:%09d\r\n" \
+        "EndSelection:%09d\r\n" \
+        "SourceURL:%s\r\n"
+        
+    MARKER_BLOCK_OUTPUT_TEST = \
+        "Version:1.0\r\n" \
         "StartFragment:%09d\r\n" \
         "EndFragment:%09d\r\n" \
         "StartSelection:%09d\r\n" \
@@ -255,6 +266,27 @@ class HtmlClipboard:
         selectionEnd = selectionStart + len(selection)
         self.PutToClipboard(html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source)
 
+    def PutFragmentTest(self, fragment, selection=None, html=None, source=None):
+        """
+        Put the given well-formed fragment of Html into the clipboard.
+
+        selection, if given, must be a literal string within fragment.
+        html, if given, must be a well-formed Html document that textually
+        contains fragment and its required markers.
+        """
+        if selection is None:
+            selection = fragment
+        if html is None:
+            html = self.DEFAULT_HTML_BODY % fragment
+        if source is None:
+            source = "file://HtmlClipboard.py"
+
+        fragmentStart = html.index(fragment)
+        fragmentEnd = fragmentStart + len(fragment)
+        selectionStart = html.index(selection)
+        selectionEnd = selectionStart + len(selection)
+        self.PutToClipboardTest(html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source)
+
 
     def PutToClipboard(self, html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source="None"):
         """
@@ -266,7 +298,19 @@ class HtmlClipboard:
             win32clipboard.EmptyClipboard()
             src = self.EncodeClipboardSource(html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source)
             src = src.encode("UTF-8")
-            #print(src)
+            win32clipboard.SetClipboardData(self.GetCfHtml(), src)
+        finally:
+            win32clipboard.CloseClipboard()
+    
+    def PutToClipboardTest(self, html, fragmentStart, fragmentEnd, selectionStart, selectionEnd, source="None"):
+        """
+        Replace the Clipboard contents with the given html information.
+        """
+
+        try:
+            win32clipboard.OpenClipboard(0)
+            win32clipboard.EmptyClipboard()
+            src = html.encode("GBK")
             win32clipboard.SetClipboardData(self.GetCfHtml(), src)
         finally:
             win32clipboard.CloseClipboard()
@@ -280,10 +324,7 @@ class HtmlClipboard:
         dummyPrefix = self.MARKER_BLOCK_OUTPUT % (0, 0, 0, 0, 0, 0, source)
         lenPrefix = len(dummyPrefix)
 
-        prefix = self.MARKER_BLOCK_OUTPUT % (lenPrefix, len(html)+lenPrefix,
-                        fragmentStart+lenPrefix, fragmentEnd+lenPrefix,
-                        selectionStart+lenPrefix, selectionEnd+lenPrefix,
-                        source)
+        prefix = self.MARKER_BLOCK_OUTPUT % (lenPrefix, len(html)+lenPrefix,fragmentStart+lenPrefix, fragmentEnd+lenPrefix,selectionStart+lenPrefix, selectionEnd+lenPrefix,source)
         return (prefix + html)
 
 
@@ -296,7 +337,7 @@ def DumpHtml():
         dump_text = str(cb.GetHtml())
         
         
-        
+        print(str(cb.GetHtml()))
         starter = dump_text.find("<!--StartFragment-->")
         ender = dump_text.find("<!--EndFragment-->")
         if starter != -1 and ender != -1:

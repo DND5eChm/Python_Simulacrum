@@ -1,5 +1,6 @@
 import os
 import re
+import math
 import pyclip
 import tkinter
 from tkinter import *
@@ -30,7 +31,7 @@ BUFFER: Entry #缓冲区框
 # 基础功能
 '''
 # 获取剪贴板源数据（不处理）
-def get_clipboard():
+def get_clipboard(event = None):
     data = hcp.DumpHtml()
     if data != "" and data != "None":
         set_buffer(data)
@@ -48,7 +49,7 @@ def get_clipboard():
             winclip.CloseClipboard()
 
 # 预处理
-def preprocess():
+def preprocess(event = None):
     origin = get_buffer()
     if origin != "":
         if BUFFER.data_type == "html":
@@ -62,7 +63,7 @@ def preprocess():
         print("[提醒]内容为空，无需处理")
 
 # 获取剪贴板源数据并预处理
-def get_clipboard_and_preprocess():
+def get_clipboard_and_preprocess(event = None):
     get_clipboard()
     preprocess()
 
@@ -120,21 +121,21 @@ def transform_data_type(data:str,old_data_type:str,new_data_type:str):
     return data
     
 # 将缓存区的HTML代码转化为纯文本
-def html_to_text():
+def html_to_text(event = None):
     origin = get_buffer("html")
     output = purge_html(origin)
     print("[提醒]处理完成！")
     set_buffer(output,"text")
     
 # 将缓存区的HTML代码转化为不全书html
-def html_to_notall():
+def html_to_notall(event = None):
     origin = get_buffer("html")
     output = morph_notallbook_chm_html(origin)
     print("[提醒]处理完成！")
     set_buffer(output,"html")
 
 # 将缓存区的HTML代码转化为BBcode
-def html_to_bbcode():
+def html_to_bbcode(event = None):
     origin = get_buffer()
     output = morph_html_to_bbcode(origin)
     print("[提醒]转换完成！")
@@ -163,7 +164,7 @@ def ask_save_file(default_name: str,suffix: str):
     return True, user_path.name, file_name
 
 # 保存为html文件（使用模板）
-def save_as_htm():
+def save_as_htm(event = None):
     origin = get_buffer()
     if origin != "":
         page_default_name = get_page_default_name(origin)
@@ -181,7 +182,7 @@ def save_as_htm():
         print("[警告]缓冲区为空！")
 
 # 保存为文本文件
-def save_as_txt():
+def save_as_txt(event = None):
     origin = get_buffer()
     if origin != "":
         if not os.path.exists("output"):
@@ -199,14 +200,14 @@ def save_as_txt():
 # 文本生成器功能
 '''
 # 将文本转化为每单词首字母大写格式
-def word_capitalize():
+def word_capitalize(event = None):
     origin = get_buffer()
     output = origin.title().replace(" Of "," of ").replace(" In "," in ").replace(" The "," the ").replace(" On "," on ").replace("'S","'s").replace("'Ll","'ll").replace("'Ve","'ve")
     print("[提醒]已全部改为首字母大写！")
     set_buffer(output)
 
 # 将文本生成为dnd样式(隔行染色，首行加粗)表格table
-def make_table():
+def make_table(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = atr.make_table(origin)
@@ -214,7 +215,7 @@ def make_table():
         set_buffer(output,"html")
 
 # 将文本生成为果园bbcode表格table（临时写法）
-def make_bbcode_table():
+def make_bbcode_table(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = transform_data_type(atr.make_table(origin),"html","bbcode")
@@ -222,7 +223,7 @@ def make_bbcode_table():
         set_buffer(output,"bbcode")
 
 # 将文本生成为果园怪物模板BBCode
-def make_monster_statblock_bbc():
+def make_monster_statblock_bbc(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Goddess5EMonster")
@@ -230,7 +231,7 @@ def make_monster_statblock_bbc():
         set_buffer(output,"bbcode")
 
 # 将文本生成为不全书怪物模板html
-def make_monster_statblock():
+def make_monster_statblock(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Notall5EMonster")
@@ -240,26 +241,38 @@ def make_monster_statblock():
 # 输出
 '''
 # 将缓冲区以HTML格式输出到剪贴板
-def html_output_clipboard():
+def html_output_clipboard(event = None):
     origin = get_buffer("html")
     if origin != "":
         # 保留HTML标签，直接输出到剪贴板
-        pyclip.copy(origin)
+        hcp.PutHtml(origin)
         print("[提醒]已将HTML代码输出到剪贴板")
     else:
         print("[提醒]缓冲区为空，未能复制。")
 
+# 将缓冲区以HTML格式（至不全书版）输出到剪贴板
+def html_output_clipboard_test(event = None):
+    origin = get_buffer("html")
+    if origin != "":
+        # 保留HTML标签，直接输出到剪贴板
+        hcp.PutHtml(origin,True) #暂时测试
+        print("[提醒]已将HTML代码（至不全书版）输出到剪贴板")
+    else:
+        print("[提醒]缓冲区为空，未能复制。")
+
 # 将缓冲区以文本输出到剪贴板
-def text_output_clipboard():
+def text_output_clipboard(event = None):
     origin = get_buffer()
     if origin != "":
-        try:
-            winclip.OpenClipboard()
-            winclip.EmptyClipboard()
-            winclip.SetClipboardData(win32con.CF_UNICODETEXT, origin)
-            print("[提醒]已将文本输出到剪贴板")
-        finally:
-            winclip.CloseClipboard()
+        #try:
+        #    winclip.OpenClipboard()
+        #    winclip.EmptyClipboard()
+        #    winclip.SetClipboardData(win32con.CF_UNICODETEXT, origin)
+        #    print("[提醒]已将文本输出到剪贴板")
+        #finally:
+        #    winclip.CloseClipboard()
+        pyclip.copy(origin)
+        print("[提醒]已将文本输出到剪贴板")
     else:
         print("[提醒]缓冲区为空，未能复制。")
 
@@ -365,13 +378,22 @@ def a_title(parent,text: str):
 
 # 文本
 def a_text(parent,text: str):
-    Label(parent, text=text, justify='left', wraplength=420).pack(padx=1,side="top",fill="x")
+    Label(parent, text=text, justify='left', wraplength=400).pack(padx=1,side="top",fill="x")
 
 # 按钮
-def a_button(parent,text: str, command):
-    btn =Button(parent, text=text, command=command, style="TButton").pack(pady=1,padx=2,side="top",fill="x")
+def a_button(parent,action_name: str,description: str, command):
+    #btn =Button(parent, text=action_name+"。"+description, command=command, style="TButton").pack(pady=1,padx=2,side="top",fill="x")
     #Label(btn, text=text, justify='left', wraplength=420).pack(padx=1,side="top",fill="x")
     #relief="ridge",bg="#FCF8EC"
+    #height = math.ceil((len(action_name)+len(description)) * 15 / 400.0) +0.2
+    text = Text(parent,height=1.2, background="#FCF8EC",wrap="char",font=("微软雅黑", 11),cursor='hand2',relief="flat") 
+    text.insert(INSERT, action_name+"。"+description) 
+    text.pack(pady=1,padx=2,side="top",fill="x") 
+    text.config(state="disabled")
+    text.bindtags((str(text), str(root), "all"))
+    text.bind("<Button-1>",command)
+    text.tag_add("Aname", "1.0", "1."+str(len(action_name))) 
+    text.tag_config("Aname", font=("微软雅黑", 11, "bold","italic")) 
 
 # UI
 if __name__ == "__main__":
@@ -383,41 +405,46 @@ if __name__ == "__main__":
     root.iconbitmap('./icon/icon.ico')
     root.config(bg="#FCF8EC")
     #W.attributes("-toolwindow", 2)
-    tab = Frame(root,width=20)
+    tab = Frame(root,width=400,height=500)
     tab.pack(side="left",fill="y")
+    tab.pack_propagate(0)
     Separator(root, orient="vertical").pack(side="left",fill="y")
-    editor = Frame(root,width=30)
-    editor.pack(side="right",fill="y")
+    editor = Frame(root,width=500,height=500)
+    editor.pack(side="left",fill="both",expand=True)
 
     #功能列表
     a_big_title(tab,"功能 Traits")
-    a_text(tab,"果园拟像术是用于处理html或rtf（doc文件之类的），靠暴力匹配去除其中无效的style等并格式化的工具。此版本并不稳定，请不要放心使用。")
+    a_text(tab,"果园拟像术是用于处理html或rtf（doc文件之类的），靠暴力匹配去除其中无效的style等并格式化的工具。此版本并不稳定，请不要放心使用。\n"\
+    "制表器识别|、(tab)、空格分隔单元格，识别换行为分行。"
+    )
     a_title(tab,"测试 Test")
-    a_button(tab,"测试A。获取剪贴板源数据（无处理）。",get_clipboard)
-    a_button(tab,"测试B。预处理现有文本。",preprocess)
+    a_button(tab,"测试A","获取剪贴板源数据（不处理）。",get_clipboard)
+    a_button(tab,"测试B","预处理现有文本。",preprocess)
     a_title(tab,"获取 Input")
-    a_button(tab,"粘贴。将剪贴板内的数据粘贴到编辑器内。",get_clipboard_and_preprocess)
+    a_button(tab,"粘贴","将剪贴板内数据粘贴到编辑器内。",get_clipboard_and_preprocess)
     #a_button(tab,"打开文件。打开本地的一个文件，将其读取到编辑器内。",load_file)
-    a_title(tab,"处理 Process")
-    a_button(tab,"净化。删除现有文本的所有html标签", html_to_text)
-    a_button(tab,"处决不大写者。将现有文本全部转化为首字母大写的格式。", word_capitalize)
-    a_button(tab,"制表符猛击。将现有文本转化为一张DND风格的果园表格（可识别|、tab、空格分隔）。", make_table)
-    a_button(tab,"制表符猛击·二型。将现有文本转化为一张DND风格的html表格（可识别|、tab、空格分隔）。", make_table)
-    a_button(tab,"怪物创成·升华。将现有文本转化为果园的东风5E2024怪物数据卡。", make_monster_statblock_bbc)
-    a_button(tab,"怪物创成·沉降。将现有文本转化为不全书的5E2024怪物数据卡。", make_monster_statblock)
-    a_button(tab,"果园侵袭。将现有html内容转换为果园BBcode。", html_to_bbcode)
-    a_button(tab,"为何不全？将现有html内容转换为不全书的格式。", html_to_notall)
+    a_title(tab,"HTML处理 HTML Process")
+    a_button(tab,"净化之力","删除其所有html标签", html_to_text)
+    a_button(tab,"果园侵袭","将其转换为果园BBcode。", html_to_bbcode)
+    a_button(tab,"为何不全","将其转换为不全书的格式。", html_to_notall)
+    a_title(tab,"文本处理 Text Process")
+    a_button(tab,"处决不大写者","将其全部转化为首字母大写的格式。", word_capitalize)
+    a_button(tab,"制表器猛击","将其转化为一张果园表格。", make_table)
+    a_button(tab,"制表器能爆","将其转化为一张DND风格的html表格。", make_table)
+    a_button(tab,"怪物创成α","将其转化为果园的东风5E2024怪物数据卡。", make_monster_statblock_bbc)
+    a_button(tab,"怪物创成β","将其转化为不全书的5E2024怪物数据卡。", make_monster_statblock)
     a_title(tab,"输出 Output")
-    a_button(tab,"复制·带格式。将现有文本转化为带HTML格式的文本，复制到剪贴板。", html_output_clipboard)
-    a_button(tab,"复制·文本。将现有文本直接复制到剪贴板。", text_output_clipboard)
+    a_button(tab,"复制·带格式","将其转化为带格式的文本并复制到剪贴板。", html_output_clipboard)
+    a_button(tab,"复制·CHM","将其转化为CHM用文本并复制到剪贴板。", html_output_clipboard_test)
+    a_button(tab,"复制·文本","将其直接复制到剪贴板。", text_output_clipboard)
     a_title(tab,"存储 Save")
     #a_button(tab,"文档。将现有内容保存为一个由你指定的.doc文件。", save_as_doc)
-    a_button(tab,"网页文件。将现有内容保存为一个由你指定的.htm文件。", save_as_htm)
-    a_button(tab,"文本文件。将现有内容保存为一个由你指定的.txt文件。", save_as_txt)
+    a_button(tab,"网页文件","将其保存为一个由你指定的.htm文件。", save_as_htm)
+    a_button(tab,"文本文件","将其保存为一个由你指定的.txt文件。", save_as_txt)
     
     #编辑区域
     a_big_title(editor,"编辑器 Editor")
-    BUFFER = BufferText(editor,width=80,height=50,wrap="char")
+    BUFFER = BufferText(editor,width=80,height=50,wrap="char",font=("微软雅黑", 11))
     BUFFER.bind("<<TextModified>>", on_buffer_changed)
     BUFFER.data_type = "text"
     
