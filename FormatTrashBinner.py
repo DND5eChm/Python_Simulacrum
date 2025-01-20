@@ -73,10 +73,10 @@ def clean_trash_format(trash_text: str,using: str = "auto") -> str:
             print("[提醒]垃圾格式处理完成")
             break;
     # 处理后删除
-    output = re.compile(r'<(b|strong|i|em|u)></\1>', re.S|re.IGNORECASE).sub(r'\1', output)
+    output = re.compile(r'<(b|strong|i|em|u)></\1>', re.S|re.IGNORECASE).sub('', output)
     output = re.compile(r'\.*0+pt', re.S|re.IGNORECASE).sub('pt', output)
     # 添加一些便于观看的换行符
-    output = re.compile(r'</(span|div|p|tr|table|quote)>', re.S|re.IGNORECASE).sub(r'</\1>\n', output)
+    output = re.compile(r'</(span|div|p|tr|table|quote|h1|h2|h3|h4|h5|h6)>', re.S|re.IGNORECASE).sub(r'</\1>\n', output)
     return output
 
 # 识别垃圾格式类型
@@ -84,8 +84,8 @@ def garbage_sorting(trash_text:str) -> str:
     if "background-color: rgb(209, 234, 247)" in trash_text or "background-color: rgb(226, 244, 251)" in trash_text:
         print("[提醒]已发现垃圾格式特征：从纯美苹果园复制的内容")
         return "goddess"
-    elif "mso-" in trash_text:
-        print("[提醒]已发现垃圾格式特征：Word等文件")
+    elif "mso-" in trash_text or "<o:p>" in trash_text or "</o:p>" in trash_text:
+        print("[提醒]已发现垃圾格式特征：Word、PDF、等Rtf文件")
         return "rtf"
     else:
         return ""

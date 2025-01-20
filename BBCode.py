@@ -10,12 +10,17 @@ SAMEWORDS: dict[str, str] = {
     "blockquote" : "quote"
 }
 
+DEFAULTFONTSIZE = {
+        "px" : 13,
+        "pt" : 10
+}
+
 # 将html文本转换为bbcode文本
 def morph_html_to_bbcode(html_text: str) -> str:
     output: str = html_text
     cursor: int = 0
     output = output.replace("\r","")
-    output = output.replace("\n"," ")
+    output = output.replace("\n","")
     output = output.replace("<br>","\n")
     output = output.replace("!important","")
     
@@ -42,8 +47,8 @@ def morph_html_to_bbcode(html_text: str) -> str:
                     base_font_size["pt"] = base_font_size["px"] * 1.3333
                 break
     else:
-        base_font_size["px"] = 10
-        base_font_size["pt"] = 10
+        base_font_size["px"] = DEFAULTFONTSIZE["px"]
+        base_font_size["pt"] = DEFAULTFONTSIZE["pt"]
         
     #开始处理
     while(True):
@@ -79,8 +84,10 @@ def morph_html_to_bbcode(html_text: str) -> str:
                 elif tag.tag_name in ["tr","li"]: #末尾换行
                     bbcode_start = bbcode_start + f"[{tag.tag_name}]"
                     bbcode_end = f"[/{tag.tag_name}]\n" + bbcode_end
+                elif tag.tag_name in ["h1","h2","h3","h4","h5","h6"]:
+                    bbcode_end = "\n" + bbcode_end
                 elif tag.tag_name == "p":
-                    bbcode_content = bbcode_content + "\n"
+                    bbcode_end = "\n" + bbcode_end
                 elif tag.tag_align != "":
                     bbcode_start = bbcode_start + f"[{tag.tag_align}]"
                     bbcode_end = f"[/{tag.tag_align}]" + bbcode_end
@@ -99,17 +106,21 @@ def morph_html_to_bbcode(html_text: str) -> str:
                         if style_name == "color":
                             if style_config.startswith("rgb("):
                                 style_config = rgb_to_hex(style_config)
-                            bbcode_start = bbcode_start + "[color="+style_config+"]"
-                            bbcode_end = "[/color]" + bbcode_end
+                                if style_config != "#000000": # 黑色忽略
+                                    bbcode_start = bbcode_start + "[color="+style_config+"]"
+                                    bbcode_end = "[/color]" + bbcode_end
+                            else:
+                                bbcode_start = bbcode_start + "[color="+style_config+"]"
+                                bbcode_end = "[/color]" + bbcode_end
                         elif style_name in ["font-size","mso-bidi-font-size"]:
                             for unit in ["pt","px"]:
                                 if style_config.endswith(unit):
                                     size_str = style_config[:-len(unit)]
-                                    size = float(size_str) / base_font_size[unit]
-                                    style_config = str(int(size))+unit
-                            print(style_config)
-                            bbcode_start = bbcode_start + f"[size={style_config}]"
-                            bbcode_end = "[/size]" + bbcode_end
+                                    size = float(size_str) / base_font_size[unit] * DEFAULTFONTSIZE[unit]
+                                    if int(size) != DEFAULTFONTSIZE[unit]:
+                                        style_config = str(int(size))+unit
+                                        bbcode_start = bbcode_start + f"[size={style_config}]"
+                                        bbcode_end = "[/size]" + bbcode_end
                         elif style_name == "text-decoration":
                             if style_config == "underline":
                                 bbcode_start = bbcode_start + "[u]"

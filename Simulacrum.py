@@ -20,7 +20,7 @@ from NotallCHM import morph_notallbook_chm_html
 from HTMLTagTraverse import get_page_default_name
 from SummonMonster import summon_monster
 
-VERSION = "0.6β 不稳定版"
+VERSION = "1.0 测试版"
 
 root: Tk #窗口本体
 BUFFER: Entry #缓冲区框
@@ -50,10 +50,21 @@ def get_clipboard():
 # 预处理
 def preprocess():
     origin = get_buffer()
-    print("[提醒]预处理开始")
-    output = clean_trash_format(origin)
-    print("[提醒]预处理完成！")
-    set_buffer(output)
+    if origin != "":
+        if BUFFER.data_type == "html":
+            print("[提醒]预处理开始")
+            output = clean_trash_format(origin)
+            print("[提醒]预处理完成！")
+            set_buffer(output,"html")
+        else:
+            print("[提醒]内容并非HTML，无需处理")
+    else:
+        print("[提醒]内容为空，无需处理")
+
+# 获取剪贴板源数据并预处理
+def get_clipboard_and_preprocess():
+    get_clipboard()
+    preprocess()
 
 # 获取缓冲区数据
 def get_buffer(as_data_type: str = "") -> str:
@@ -132,40 +143,55 @@ def html_to_bbcode():
 '''
 # 保存功能
 '''
-# 保存，但以读取模板并填写的格式保存
-def save_as_html():
+# 打开窗口，询问保存路径
+def ask_save_file(default_name: str,suffix: str):
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    filetype = []
+    if suffix in [".htm",".html"]:
+        filetypes= [("不全书HTML文件", ".htm .html")]
+    elif suffix in [".doc",".rtf"]:
+        filetypes= [("RTF文件", ".doc .rtf")]
+    elif suffix == ".txt":
+        filetypes= [("文本文件", ".txt")]
+    user_path = filedialog.asksaveasfile(title="请选择保存位置", initialdir="./output/", initialfile=default_name + suffix, filetypes=filetype, defaultextension=suffix)
+    if user_path == None:
+        print("[提醒]已取消保存。")
+        return False, "", ""
+    print("[提醒]正在保存至", user_path.name)
+    file_name = os.path.splitext(os.path.basename(user_path.name))[0]
+    return True, user_path.name, file_name
+
+# 保存为html文件（使用模板）
+def save_as_htm():
     origin = get_buffer()
     if origin != "":
         page_default_name = get_page_default_name(origin)
         template: str = ""
         with open("template/Empty.htm", "r", encoding="GBK") as f:
             template = f.read()
-        if not os.path.exists("output"):
-            os.makedirs("output")
         # 打开窗口让用户选择
-        user_path = filedialog.asksaveasfile(title="请选择保存位置", initialdir="./output/", initialfile=page_default_name +
-                                             ".htm", filetypes=[("不全书HTML文件", ".htm .html")], defaultextension=".htm")
-        if user_path == None:
-            print("已取消保存")
-            return
-        print("[提醒]已保存至：", user_path.name)
-        output_name = os.path.splitext(os.path.basename(user_path.name))[0]
-        with open(user_path.name, "w", encoding="GBK",errors="ignore") as f:
-            f.write(template.replace("{{内容}}", origin).replace(
-                "{{标题}}", output_name))
-        print("[提醒]已保存！")
+        decide, file_path, output_name = ask_save_file(page_default_name,".htm")
+        if decide:
+            with open(file_path, "w", encoding="GBK",errors="ignore") as f:
+                f.write(template.replace("{{内容}}", origin).replace(
+                    "{{标题}}", output_name))
+            print("[提醒]保存完毕！")
     else:
         print("[警告]缓冲区为空！")
 
-# 保存
-def save():
+# 保存为文本文件
+def save_as_txt():
     origin = get_buffer()
     if origin != "":
         if not os.path.exists("output"):
             os.makedirs("output")
-        with open("output/output.txt", "w", encoding="UTF-8") as f:
-            f.write(origin)
-        print("[提醒]已保存！")
+        # 打开窗口让用户选择
+        decide, file_path, output_name = ask_save_file("output",".txt")
+        if decide:
+            with open(file_path, "w", encoding="UTF-8",errors="ignore") as f:
+                f.write(origin)
+            print("[提醒]保存完毕！")
     else:
         print("[警告]缓冲区为空！")
 
@@ -343,7 +369,8 @@ def a_text(parent,text: str):
 
 # 按钮
 def a_button(parent,text: str, command):
-    Button(parent, text=text, command=command, style="TButton").pack(pady=1,padx=2,side="top",fill="x")
+    btn =Button(parent, text=text, command=command, style="TButton").pack(pady=1,padx=2,side="top",fill="x")
+    #Label(btn, text=text, justify='left', wraplength=420).pack(padx=1,side="top",fill="x")
     #relief="ridge",bg="#FCF8EC"
 
 # UI
@@ -353,6 +380,7 @@ if __name__ == "__main__":
     root.bind("<FocusIn>", on_focus_in)
     root.bind("<FocusOut>", on_focus_out)
     root.title("果园格式拟像术 v"+VERSION)
+    root.iconbitmap('./icon/icon.ico')
     root.config(bg="#FCF8EC")
     #W.attributes("-toolwindow", 2)
     tab = Frame(root,width=20)
@@ -365,8 +393,11 @@ if __name__ == "__main__":
     a_big_title(tab,"功能 Traits")
     a_text(tab,"果园拟像术是用于处理html或rtf（doc文件之类的），靠暴力匹配去除其中无效的style等并格式化的工具。此版本并不稳定，请不要放心使用。")
     a_title(tab,"测试 Test")
-    a_button(tab,"测试A。获取剪贴板源数据。",get_clipboard)
-    a_button(tab,"测试B。预处理当前数据。",preprocess)
+    a_button(tab,"测试A。获取剪贴板源数据（无处理）。",get_clipboard)
+    a_button(tab,"测试B。预处理现有文本。",preprocess)
+    a_title(tab,"获取 Input")
+    a_button(tab,"粘贴。将剪贴板内的数据粘贴到编辑器内。",get_clipboard_and_preprocess)
+    #a_button(tab,"打开文件。打开本地的一个文件，将其读取到编辑器内。",load_file)
     a_title(tab,"处理 Process")
     a_button(tab,"净化。删除现有文本的所有html标签", html_to_text)
     a_button(tab,"处决不大写者。将现有文本全部转化为首字母大写的格式。", word_capitalize)
@@ -377,12 +408,12 @@ if __name__ == "__main__":
     a_button(tab,"果园侵袭。将现有html内容转换为果园BBcode。", html_to_bbcode)
     a_button(tab,"为何不全？将现有html内容转换为不全书的格式。", html_to_notall)
     a_title(tab,"输出 Output")
-    a_button(tab,"带格式。将现有文本转化为带HTML格式的文本，复制到剪贴板。", html_output_clipboard)
-    a_button(tab,"文本。将现有文本直接复制到剪贴板。", text_output_clipboard)
+    a_button(tab,"复制·带格式。将现有文本转化为带HTML格式的文本，复制到剪贴板。", html_output_clipboard)
+    a_button(tab,"复制·文本。将现有文本直接复制到剪贴板。", text_output_clipboard)
     a_title(tab,"存储 Save")
     #a_button(tab,"文档。将现有内容保存为一个由你指定的.doc文件。", save_as_doc)
-    a_button(tab,"网页。将现有内容保存为一个由你指定的.html文件。", save_as_html)
-    a_button(tab,"文本。将现有内容保存为output.txt。", save)
+    a_button(tab,"网页文件。将现有内容保存为一个由你指定的.htm文件。", save_as_htm)
+    a_button(tab,"文本文件。将现有内容保存为一个由你指定的.txt文件。", save_as_txt)
     
     #编辑区域
     a_big_title(editor,"编辑器 Editor")

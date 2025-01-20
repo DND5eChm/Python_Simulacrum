@@ -15,5 +15,6 @@ if __name__ == "__main__":
         os.makedirs("output")
     with zipfile.ZipFile("output/果园拟像术 "+VERSION+".zip", 'w') as _z:
         _z.write("./dist/Simulacrum.exe","./Simulacrum.exe")
+        _z.write("./icon/icon.ico","./icon/icon.ico")
         add_folder_to_zip(_z,"template")
         add_folder_to_zip(_z,"trash_styles")
