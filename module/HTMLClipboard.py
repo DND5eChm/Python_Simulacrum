@@ -334,9 +334,7 @@ def DumpHtml():
         #print("prefix=>>>%s<<<END" % cb.prefix)
         #print("htmlClipboardVersion=>>>%s<<<END" % cb.htmlClipboardVersion)
         dump_text = str(cb.GetHtml())
-        
-        
-        print(str(cb.GetHtml()))
+        #print(str(cb.GetHtml()))
         starter = dump_text.find("<!--StartFragment-->")
         ender = dump_text.find("<!--EndFragment-->")
         if starter != -1 and ender != -1:

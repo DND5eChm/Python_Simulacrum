@@ -1,7 +1,8 @@
 import os
 import re
 
-#from spire.doc import Document, FileFormat
+from win32com.client import Dispatch
+from pydocx import PyDocX
 
 from tkinter import filedialog
 import win32clipboard as winclip
@@ -17,36 +18,115 @@ from module.NotallCHM import morph_notallbook_chm_html
 from module.HTMLTagTraverse import get_page_default_name
 from module.SummonMonster import summon_monster
 
-from gui.Editor import get_buffer, set_buffer, get_buffer_data_type
+from gui.Editor import get_buffer, set_buffer,get_buffer_selected, set_buffer_selected, get_buffer_data_type, check_data_type, transform_data_type
 
 '''
 # 读取
 '''
-# 获取剪贴板源数据（不处理）
-def get_clipboard(event = None):
+# 读取：获取剪贴板源数据（不处理）
+def get_clipboard_raw() -> str:
     data = hcp.DumpHtml()
     if data != "" and data != "None":
-        set_buffer(data)
+        return data
     else:
         try:
             winclip.OpenClipboard()
             text = winclip.GetClipboardData(win32con.CF_UNICODETEXT)
             if text != "":
-                set_buffer(text)
+                return text
             else:
                 print("[提醒]剪贴板内容为空")
+                return ""
         except:
             print("[提醒]剪贴板内容无法识别。")
         finally:
             winclip.CloseClipboard()
+    return ""
 
-# 预处理
-def preprocess(event = None):
+# 读取：获取剪贴板源数据（如果是HTML则进行预处理）
+def get_clipboard() -> str:
+    data = get_clipboard_raw()
+    if check_data_type(data) == "html":
+        data = preprocess(data)
+    return data
+
+# 功能：获取剪贴板内容，覆盖当前缓存区
+def cmd_get_clipboard(event = None):
+    set_buffer(get_clipboard())
+
+# 功能：获取剪贴板内容并净化，覆盖当前缓存区
+def cmd_get_clipboard_and_purge(event = None):
+    data = get_clipboard()
+    if check_data_type(data) == "html":
+        data = purge_html(data)
+    set_buffer(data)
+
+# 功能：获取剪贴板内容，添加到当前缓存区的最后
+def cmd_get_clipboard_addon(event = None):
+    origin = get_buffer()
+    data = get_clipboard()
+    set_buffer(origin+data)
+
+# 功能：将当前缓存区全部复制到剪贴板
+def cmd_set_clipboard(event = None):
+    data = get_buffer()
+    if data != "":
+        pyclip.copy(data)
+        print("[提醒]已将选择文本复制到剪贴板")
+
+# 功能：将当前缓存区全部复制到剪贴板，然后清空
+def cmd_set_clipboard_and_delete(event = None):
+    data = get_buffer()
+    if data != "":
+        pyclip.copy(data)
+        set_buffer("")
+        print("[提醒]已将选择文本剪切到剪贴板")
+
+# 功能：清空当前缓存区
+def cmd_clear(event = None):
+    set_buffer("")
+
+# 选区功能：获取剪贴板内容，覆盖当前选区
+def selcmd_get_clipboard(event = None):
+    set_buffer_selected(get_clipboard())
+
+# 选区功能：获取剪贴板内容并净化，覆盖当前选区
+def selcmd_get_clipboard_and_purge(event = None):
+    data = get_buffer_selected()
+    if check_data_type(data) == "html":
+        data = purge_html(data)
+    set_buffer_selected(data)
+
+# 选区功能：将选区复制到剪贴板
+def selcmd_set_clipboard(event = None):
+    data = get_buffer_selected()
+    if data != "":
+        pyclip.copy(data)
+        print("[提醒]已将选择文本复制到剪贴板")
+
+# 选区功能：将选区复制到剪贴板，然后删除原选择区域
+def selcmd_set_clipboard_and_delete(event = None):
+    data = get_buffer_selected()
+    if data != "":
+        pyclip.copy(data)
+        set_buffer_selected("")
+        print("[提醒]已将选择文本剪切到剪贴板")
+
+# 功能：将选区删除
+def selcmd_delete(event = None):
+    set_buffer_selected("")
+
+# 处理：预处理
+def preprocess(data: str):
+    return clean_trash_format(data)
+
+# 功能：预处理
+def cmd_preprocess(event = None):
     origin = get_buffer()
     if origin != "":
         if get_buffer_data_type() == "html":
             print("[提醒]预处理开始")
-            output = clean_trash_format(origin)
+            output = preprocess(origin)
             print("[提醒]预处理完成！")
             set_buffer(output,"html")
         else:
@@ -54,131 +134,137 @@ def preprocess(event = None):
     else:
         print("[提醒]内容为空，无需处理")
 
-# 获取剪贴板源数据并预处理
-def get_clipboard_and_preprocess(event = None):
-    get_clipboard()
-    preprocess()
-
-# 打开窗口，询问打开文件
-def ask_open_file(event = None):
+# 读取：打开窗口，询问打开文件
+def ask_open_file():
     filetype = [("拟像术材料成分",".htm .html .doc .docx .rtf .txt"),("不全书HTML文件", ".htm .html"),("RTF文件", ".doc .rtf"),("文本文件", ".txt")]
     user_path = filedialog.askopenfile(title="请选择要打开的文件",initialdir="./", filetypes=filetype)
         
     if user_path == None:
         print("[提醒]已取消读取。")
-        return False
+        return ""
     print("[提醒]正在读取", user_path.name)
     file_path = user_path.name
     #检查文件类型
     file_type = ""
-    if file_type == "":
-        for suffix in [".htm",".html"]:
-            if file_path.endswith(suffix):
+    if file_path.endswith(".htm") or file_path.endswith(".html"):
                 file_type = "html"
-    if file_type == "":
-        for suffix in [".doc",".docx",".rtf"]:
-            if file_path.endswith(suffix):
-                file_type = "rtf"
-    if file_type == "" and file_path.endswith(".txt"):
+    elif file_path.endswith(".doc"):
+                file_type = "doc"
+    elif file_path.endswith(".docx"):
+                file_type = "docx"
+    else: #if file_path.endswith(".txt"):
                 file_type = "txt"
     
     #根据类型读取
     output = ""
     
-    
-    '''try:
-    if file_type == "rtf":
+    #try:
+    if file_type in ["doc","docx"]:
         if not os.path.exists("output"):
             os.makedirs("output")
-        doc = Document()
-        doc.LoadFromFile(file_path)
-        print(doc.GetText())
-        doc.HtmlExportOptions.IsTextInputFormFieldAsText = True
-        doc.SaveToFile("./output/cache.html", FileFormat.Html)
-        doc.Close()
+        if file_type == "doc":
+            word = Dispatch("WORD.Application")
+            doc = word.Documents.Open(file_path)
+            file_path = file_path + "x"
+            doc.SaveAs(file_path,12,False,"",True,"",False,False,False,False)
+            doc.Close()
+            word.Quit()
+        output = PyDocX.to_html(file_path)
         file_type = "html"
-        file_path = "./output/cache.html"
+        
     #except:
     #    print("[警告]无法读取该RTF文件")'''
-    
-    try:
-        with open(user_path.name,mode='r') as _f:
-            output = _f.read()
-    except:
-        print("[警告]无法读取所选文件")
-    
+    else:
+        try:
+            with open(user_path.name,mode='r') as _f:
+                output = _f.read()
+        except:
+            print("[警告]无法读取所选文件")
+            return ""
+        
     if file_type == "html":
         left = output.find("<body>")
         right = output.find("</body>")
         if left != -1 and right != -1:
             output = output[left+6:right]
+        output = preprocess(output)
     if output != "":
-        set_buffer(output)
         print("[提醒]读取完毕")
+        return output
     else:
-        print("[警告]读取失败")
+        print("[警告]未读取到内容")
+        return ""
+
+# 功能：打开窗口，询问打开文件
+def cmd_ask_open_file(event = None):
+    data = ask_open_file()
+    if data != "":
+        set_buffer(data)
 
 '''
 # 转换功能
 '''
-# 将缓存区的HTML代码转化为纯文本
-def html_to_text(event = None):
+# 功能：将缓存区的HTML代码转化为纯文本
+def cmd_html_to_text(event = None):
     origin = get_buffer("html")
-    output = purge_html(origin)
-    print("[提醒]处理完成！")
-    set_buffer(output,"text")
+    if origin != "":
+        output = purge_html(origin)
+        print("[提醒]处理完成！")
+        set_buffer(output,"text")
     
-# 将缓存区的HTML代码转化为不全书html
-def html_to_notall(event = None):
+# 功能：将缓存区的HTML代码转化为不全书html
+def cmd_html_to_notall(event = None):
     origin = get_buffer("html")
-    output = morph_notallbook_chm_html(origin)
-    print("[提醒]处理完成！")
-    set_buffer(output,"html")
+    if origin != "":
+        output = morph_notallbook_chm_html(origin)
+        print("[提醒]处理完成！")
+        set_buffer(output,"html")
 
-# 将缓存区的HTML代码转化为BBcode
-def html_to_bbcode(event = None):
+# 功能：将缓存区的HTML代码转化为BBcode
+def cmd_html_to_bbcode(event = None):
     origin = get_buffer()
-    output = morph_html_to_bbcode(origin)
-    print("[提醒]转换完成！")
-    set_buffer(output,"bbcode")
-
+    if origin != "":
+        output = morph_html_to_bbcode(origin)
+        print("[提醒]转换完成！")
+        set_buffer(output,"bbcode")
 
 '''
 # 文本生成器功能
 '''
-# 将文本转化为每单词首字母大写格式
-def word_capitalize(event = None):
-    origin = get_buffer()
-    output = origin.title().replace(" Of "," of ").replace(" In "," in ").replace(" The "," the ").replace(" On "," on ").replace("'S","'s").replace("'Ll","'ll").replace("'Ve","'ve")
-    print("[提醒]已全部改为首字母大写！")
-    set_buffer(output)
+# 选区功能：将鼠标所选的文本转化为每单词首字母大写格式
+def selcmd_word_capitalize(event = None):
+    origin = get_buffer_selected()
+    if origin != "":
+        output = origin.title().replace(" Of "," of ").replace(" In "," in ").replace(" The "," the ").replace(" On "," on ").replace("'S","'s").replace("'Ll","'ll").replace("'Ve","'ve")
+        print("[提醒]已将所选文本改为首字母大写！")
+        set_buffer_selected(output)
 
-# 将文本生成为dnd样式(隔行染色，首行加粗)表格table
-def make_table(event = None):
+# 功能：将文本生成为dnd样式(隔行染色，首行加粗)表格table
+def cmd_make_table(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = atr.make_table(origin)
         print("[提醒]表格制作完成！")
         set_buffer(output,"html")
 
-# 将文本生成为果园bbcode表格table（临时写法）
-def make_bbcode_table(event = None):
+# 功能：将文本生成为果园bbcode表格table（临时写法）
+def cmd_make_bbcode_table(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = transform_data_type(atr.make_table(origin),"html","bbcode")
         print("[提醒]表格制作完成！")
         set_buffer(output,"bbcode")
 
-# 将文本生成为果园怪物模板BBCode
-def make_monster_statblock_bbc(event = None):
+# 功能：将文本生成为果园怪物模板BBCode
+def cmd_make_monster_statblock_bbc(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Goddess5EMonster")
         print("[提醒]生物数据制作完成！")
         set_buffer(output,"bbcode")
 
-# 将文本生成为不全书怪物模板html
-def make_monster_statblock(event = None):
+# 功能：将文本生成为不全书怪物模板html
+def cmd_make_monster_statblock(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Notall5EMonster")
@@ -187,28 +273,28 @@ def make_monster_statblock(event = None):
 '''
 # 输出
 '''
-# 将缓冲区以HTML格式输出到剪贴板
-def html_output_clipboard(event = None):
+# 功能：将缓存区以HTML格式输出到剪贴板
+def cmd_html_output_clipboard(event = None):
     origin = get_buffer("html")
     if origin != "":
         # 保留HTML标签，直接输出到剪贴板
         hcp.PutHtml(origin)
         print("[提醒]已将HTML代码输出到剪贴板")
     else:
-        print("[提醒]缓冲区为空，未能复制。")
+        print("[提醒]缓存区为空，未能复制。")
 
-# 将缓冲区以HTML格式（至不全书版）输出到剪贴板
-def html_output_clipboard_test(event = None):
+# 功能：将缓存区以HTML格式（至不全书版）输出到剪贴板
+def cmd_html_output_clipboard_test(event = None):
     origin = get_buffer("html")
     if origin != "":
         # 保留HTML标签，直接输出到剪贴板
         hcp.PutHtml(origin,True) #暂时测试
         print("[提醒]已将HTML代码（至不全书版）输出到剪贴板")
     else:
-        print("[提醒]缓冲区为空，未能复制。")
+        print("[提醒]缓存区为空，未能复制。")
 
-# 将缓冲区以文本输出到剪贴板
-def text_output_clipboard(event = None):
+# 功能：将缓存区以文本输出到剪贴板
+def cmd_text_output_clipboard(event = None):
     origin = get_buffer()
     if origin != "":
         #try:
@@ -221,13 +307,13 @@ def text_output_clipboard(event = None):
         pyclip.copy(origin)
         print("[提醒]已将文本输出到剪贴板")
     else:
-        print("[提醒]缓冲区为空，未能复制。")
+        print("[提醒]缓存区为空，未能复制。")
 
 
 '''
 # 存储功能
 '''
-# 打开窗口，询问保存路径
+# 存储：打开窗口，询问保存路径
 def ask_save_file(default_name: str,suffix: str):
     if not os.path.exists("output"):
         os.makedirs("output")
@@ -246,8 +332,8 @@ def ask_save_file(default_name: str,suffix: str):
     file_name = os.path.splitext(os.path.basename(user_path.name))[0]
     return True, user_path.name, file_name
 
-# 保存为html文件（使用模板）
-def save_as_htm(event = None):
+# 功能：保存为html文件（使用模板）
+def cmd_save_as_htm(event = None):
     origin = get_buffer()
     if origin != "":
         page_default_name = get_page_default_name(origin)
@@ -262,10 +348,10 @@ def save_as_htm(event = None):
                     "{{标题}}", output_name))
             print("[提醒]保存完毕！")
     else:
-        print("[警告]缓冲区为空！")
+        print("[警告]缓存区为空！")
 
-# 保存为文本文件
-def save_as_txt(event = None):
+# 功能：保存为文本文件
+def cmd_save_as_txt(event = None):
     origin = get_buffer()
     if origin != "":
         if not os.path.exists("output"):
@@ -277,4 +363,4 @@ def save_as_txt(event = None):
                 f.write(origin)
             print("[提醒]保存完毕！")
     else:
-        print("[警告]缓冲区为空！")
+        print("[警告]缓存区为空！")

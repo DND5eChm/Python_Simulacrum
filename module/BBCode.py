@@ -85,7 +85,9 @@ def morph_html_to_bbcode(html_text: str) -> str:
                     bbcode_start = bbcode_start + f"[{tag.tag_name}]"
                     bbcode_end = f"[/{tag.tag_name}]\n" + bbcode_end
                 elif tag.tag_name in ["h1","h2","h3","h4","h5","h6"]:
-                    bbcode_end = "\n" + bbcode_end
+                    size = ("48pt","32pt","24pt","18pt","16pt","14pt")[int(tag.tag_name[1])]
+                    bbcode_end = bbcode_start + f"[size={size}][b]"
+                    bbcode_end = "\n[/b][/size]" + bbcode_end
                 elif tag.tag_name == "p":
                     bbcode_end = "\n" + bbcode_end
                 elif tag.tag_align != "":

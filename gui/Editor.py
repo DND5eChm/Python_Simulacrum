@@ -50,13 +50,23 @@ class Editor(Text):
     # 手动更改缓存区事件
     def on_editor_changed(self,event):
         data = self.get("0.0","end")
-        new_data_type = get_data_type(data)
+        new_data_type = check_data_type(data)
         if new_data_type != self.data_type:
              self.data_type_change(new_data_type)
         self.data_length = len(data)
         # 更新提示栏
         if self.length_label:
             self.length_label.config(text=str(self.data_length)+" 字符，数据类型："+self.data_type_str)
+    
+    # 有文本被选中？
+    def selected_text(self):
+        if self.tag_ranges('sel'): #有选择文本
+            left = self.index(SEL_FIRST)
+            right = self.index(SEL_LAST)
+            text = self.get(left,right)
+            if len(text) > 0:
+                return True
+        return False
     
     # 类型更新
     def data_type_change(self, new_data_type:str):
@@ -83,8 +93,8 @@ class Editor(Text):
 """
 # 获取缓冲区数据
 def get_buffer(as_data_type: str = "") -> str:
-    output = Editor.Buffer.get('0.0','end').strip()
-    if chr(65279) in output:
+    output = Editor.Buffer.get('1.0','end').strip()
+    if chr(65279) in output: #Word幽灵
         output = output.replace(chr(65279),"")
     
     # 如果有数据类型限制，尝试转换为该类数据
@@ -98,19 +108,45 @@ def set_buffer(data: str,data_type:str = "auto"):
     Editor.Buffer.insert("1.0",str(data))
     #不提供数据类型，则自动识别当前数据的类型
     if data_type == "auto":
-        data_type = get_data_type(data)
+        data_type = check_data_type(data)
     if Editor.Buffer.data_type != data_type:
         Editor.Buffer.data_type_change(data_type)
     # 如果可预览的话，更新预览
     #if "<" in data:
     #    PREVIEWER.load_html(str(data))
 
+# 获取缓冲区所选区域的数据
+def get_buffer_selected(as_data_type: str = "") -> str:
+    if Editor.Buffer.tag_ranges('sel'): #有选择文本
+        left = Editor.Buffer.index(SEL_FIRST)
+        right = Editor.Buffer.index(SEL_LAST)
+        output = Editor.Buffer.get(left,right)
+        if chr(65279) in output: #Word幽灵
+            output = output.replace(chr(65279),"")
+        if len(output) > 0:
+            return output
+    return ""
+    
+
+# 设置缓冲区所选区域的数据
+def set_buffer_selected(data: str,data_type:str = "auto"):
+    if Editor.Buffer.tag_ranges('sel'): #有选择文本
+        left = Editor.Buffer.index(SEL_FIRST)
+        right = Editor.Buffer.index(SEL_LAST)
+        if left != right:
+            Editor.Buffer.replace(left,right,data)
+        #不提供数据类型，则自动识别当前数据的类型
+        if data_type == "auto":
+            data_type = check_data_type(data)
+        if Editor.Buffer.data_type != data_type:
+            Editor.Buffer.data_type_change(data_type)
+
 # 获取缓冲区数据类型
 def get_buffer_data_type():
     return Editor.Buffer.data_type
 
 # 获取数据的格式类型
-def get_data_type(data:str):
+def check_data_type(data:str):
     if "</" in data and ">" in data:
         return "html"
     elif "[/" in data and "]" in data:

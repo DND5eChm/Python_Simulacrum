@@ -1,3 +1,4 @@
 pywin32>=306
 pyclip>=0.7.0
 TkinterWeb>=3.24.14
+pydocx
