@@ -1,7 +1,7 @@
 import os
 import re
 
-from HTMLTagTraverse import htmltag, find_tag, find_tag_pair, find_tag_close_places
+from module.HTMLTagTraverse import htmltag, find_tag, find_tag_pair, find_tag_close_places
 
 # 删除垃圾格式
 def clean_trash_format(trash_text: str,using: str = "auto") -> str:

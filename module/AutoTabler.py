@@ -1,6 +1,6 @@
 import os
 
-from HTMLTagTraverse import find_tag, find_tag_pair
+from module.HTMLTagTraverse import find_tag, find_tag_pair
 
 BGCOLOR = "#eeeeee"
 TAB = "	"

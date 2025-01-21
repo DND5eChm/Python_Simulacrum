@@ -1,7 +1,7 @@
 import os
 import re
 
-from AutoTabler import fix_table
+from module.AutoTabler import fix_table
 
 # 将span改为不全书格式的font
 def morph_span_to_chm_font(span_text: str) -> str:

@@ -1,5 +1,5 @@
-from HTMLTagTraverse import htmltag, find_tag_pair, translate_html_entity
-from Tools import rgb_to_hex
+from module.HTMLTagTraverse import htmltag, find_tag_pair, translate_html_entity
+from module.Tools import rgb_to_hex
 import re
 
 SAMEWORDS: dict[str, str] = {
