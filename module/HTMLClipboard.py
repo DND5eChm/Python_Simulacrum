@@ -156,7 +156,7 @@ class HtmlClipboard:
                 win32clipboard.OpenClipboard(0)
                 src = win32clipboard.GetClipboardData(self.GetCfHtml())
                 src = src.decode("UTF-8")
-                #print(src)
+                print(src)
                 self.DecodeClipboardSource(src)
                 
                 cbOpened = True
@@ -305,7 +305,11 @@ class HtmlClipboard:
         try:
             win32clipboard.OpenClipboard(0)
             win32clipboard.EmptyClipboard()
-            src = html.encode("GBK")
+            #src = html.encode("GBK")
+            src = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"\
+"<HTML><HEAD><TITLE>复制文本</TITLE></HEAD>"\
+"<BODY lang=ZH-CN>" + html + "</BODY></HTML>"
+            src = src.encode("GBK","ignore")
             win32clipboard.SetClipboardData(self.GetCfHtml(), src)
         finally:
             win32clipboard.CloseClipboard()

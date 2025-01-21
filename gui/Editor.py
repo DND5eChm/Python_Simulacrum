@@ -1,5 +1,10 @@
 from tkinter import *
 from tkinter.ttk import *
+
+import module.HTMLClipboard as hcp
+from module.Tools import purge_html, purge_bbcode
+from module.BBCode import morph_html_to_bbcode
+
 '''
 # 编辑器·缓存区类
 '''
@@ -30,12 +35,16 @@ class Editor(Text):
     
     # 打包
     def pack(self, *args, **kwargs):
-        self.scrollbar = Scrollbar(self.master, orient='vertical')
-        self.config(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill='y')
-        self.scrollbar.config(command=self.yview)
+        self.scrollbar_y = Scrollbar(self.master, orient='vertical')
+        self.scrollbar_x = Scrollbar(self.master, orient='horizontal')
+        self.config(yscrollcommand=self.scrollbar_y.set,xscrollcommand=self.scrollbar_x.set)
         self.length_label = Label(self.master,text=str(self.data_length)+" 字符，数据类型："+self.data_type_str,style="length_label.TLabel")
+        self.scrollbar_x.config(command=self.xview)
+        self.scrollbar_y.config(command=self.yview)
+        # 打包各部件
         self.length_label.pack(side="bottom",fill="x", expand=True)
+        #self.scrollbar_x.pack(side="bottom", fill='x')
+        self.scrollbar_y.pack(side="right", fill='y')
         Text.pack(self, *args, **kwargs)
     
     # 手动更改缓存区事件
@@ -51,12 +60,13 @@ class Editor(Text):
     
     # 类型更新
     def data_type_change(self, new_data_type:str):
-        if new_data_type != self.data_type:
-            self.data_type = new_data_type
-            if new_data_type == "html": # html类型不自动换行
-                self.config(wrap="none")
-            else:
-                self.config(wrap="char")
+        self.data_type = new_data_type
+        if new_data_type == "html": # html类型不自动换行
+            self.config(wrap="none")
+            self.scrollbar_x.pack(side="bottom", fill='x')
+        else:
+            self.config(wrap="char")
+            self.scrollbar_x.pack_forget()
             
         if self.data_type == "html":
             self.data_type_str = "HTML代码"
@@ -107,3 +117,20 @@ def get_data_type(data:str):
         return "bbcode"
     else:
         return "text"
+
+# 数据类型转换
+def transform_data_type(data:str,old_data_type:str,new_data_type:str):
+    if old_data_type == "text":
+        return data # 文本无法再修改
+    trans = old_data_type+"→"+new_data_type
+    if trans == "html→text":
+        return purge_html(data) # 清除html格式
+    elif trans == "bbcode→text":
+        return purge_bbcode(data) # 清除bbcode格式
+    elif trans == "html→bbcode":
+        return morph_html_to_bbcode(data) # 转换html至bbcode
+    elif trans == "bbcode→html":
+        return "暂不支持由bbcode转html" #转换bbcode至html
+    
+    #不符合上述的，直接原封不动返回
+    return data

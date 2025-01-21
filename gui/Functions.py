@@ -1,6 +1,8 @@
 import os
 import re
 
+#from spire.doc import Document, FileFormat
+
 from tkinter import filedialog
 import win32clipboard as winclip
 import pyclip
@@ -18,7 +20,7 @@ from module.SummonMonster import summon_monster
 from gui.Editor import get_buffer, set_buffer, get_buffer_data_type
 
 '''
-# 基础功能
+# 读取
 '''
 # 获取剪贴板源数据（不处理）
 def get_clipboard(event = None):
@@ -57,26 +59,68 @@ def get_clipboard_and_preprocess(event = None):
     get_clipboard()
     preprocess()
 
+# 打开窗口，询问打开文件
+def ask_open_file(event = None):
+    filetype = [("拟像术材料成分",".htm .html .doc .docx .rtf .txt"),("不全书HTML文件", ".htm .html"),("RTF文件", ".doc .rtf"),("文本文件", ".txt")]
+    user_path = filedialog.askopenfile(title="请选择要打开的文件",initialdir="./", filetypes=filetype)
+        
+    if user_path == None:
+        print("[提醒]已取消读取。")
+        return False
+    print("[提醒]正在读取", user_path.name)
+    file_path = user_path.name
+    #检查文件类型
+    file_type = ""
+    if file_type == "":
+        for suffix in [".htm",".html"]:
+            if file_path.endswith(suffix):
+                file_type = "html"
+    if file_type == "":
+        for suffix in [".doc",".docx",".rtf"]:
+            if file_path.endswith(suffix):
+                file_type = "rtf"
+    if file_type == "" and file_path.endswith(".txt"):
+                file_type = "txt"
+    
+    #根据类型读取
+    output = ""
+    
+    
+    '''try:
+    if file_type == "rtf":
+        if not os.path.exists("output"):
+            os.makedirs("output")
+        doc = Document()
+        doc.LoadFromFile(file_path)
+        print(doc.GetText())
+        doc.HtmlExportOptions.IsTextInputFormFieldAsText = True
+        doc.SaveToFile("./output/cache.html", FileFormat.Html)
+        doc.Close()
+        file_type = "html"
+        file_path = "./output/cache.html"
+    #except:
+    #    print("[警告]无法读取该RTF文件")'''
+    
+    try:
+        with open(user_path.name,mode='r') as _f:
+            output = _f.read()
+    except:
+        print("[警告]无法读取所选文件")
+    
+    if file_type == "html":
+        left = output.find("<body>")
+        right = output.find("</body>")
+        if left != -1 and right != -1:
+            output = output[left+6:right]
+    if output != "":
+        set_buffer(output)
+        print("[提醒]读取完毕")
+    else:
+        print("[警告]读取失败")
+
 '''
 # 转换功能
 '''
-# 数据类型转换
-def transform_data_type(data:str,old_data_type:str,new_data_type:str):
-    if old_data_type == "text":
-        return data # 文本无法再修改
-    trans = old_data_type+"→"+new_data_type
-    if trans == "html→text":
-        return purge_html(data) # 清除html格式
-    elif trans == "bbcode→text":
-        return purge_bbcode(data) # 清除bbcode格式
-    elif trans == "html→bbcode":
-        return morph_html_to_bbcode(data) # 转换html至bbcode
-    elif trans == "bbcode→html":
-        return "暂不支持由bbcode转html" #转换bbcode至html
-    
-    #不符合上述的，直接原封不动返回
-    return data
-    
 # 将缓存区的HTML代码转化为纯文本
 def html_to_text(event = None):
     origin = get_buffer("html")
@@ -98,60 +142,6 @@ def html_to_bbcode(event = None):
     print("[提醒]转换完成！")
     set_buffer(output,"bbcode")
 
-'''
-# 保存功能
-'''
-# 打开窗口，询问保存路径
-def ask_save_file(default_name: str,suffix: str):
-    if not os.path.exists("output"):
-        os.makedirs("output")
-    filetype = []
-    if suffix in [".htm",".html"]:
-        filetypes= [("不全书HTML文件", ".htm .html")]
-    elif suffix in [".doc",".rtf"]:
-        filetypes= [("RTF文件", ".doc .rtf")]
-    elif suffix == ".txt":
-        filetypes= [("文本文件", ".txt")]
-    user_path = filedialog.asksaveasfile(title="请选择保存位置", initialdir="./output/", initialfile=default_name + suffix, filetypes=filetype, defaultextension=suffix)
-    if user_path == None:
-        print("[提醒]已取消保存。")
-        return False, "", ""
-    print("[提醒]正在保存至", user_path.name)
-    file_name = os.path.splitext(os.path.basename(user_path.name))[0]
-    return True, user_path.name, file_name
-
-# 保存为html文件（使用模板）
-def save_as_htm(event = None):
-    origin = get_buffer()
-    if origin != "":
-        page_default_name = get_page_default_name(origin)
-        template: str = ""
-        with open("template/Empty.htm", "r", encoding="GBK") as f:
-            template = f.read()
-        # 打开窗口让用户选择
-        decide, file_path, output_name = ask_save_file(page_default_name,".htm")
-        if decide:
-            with open(file_path, "w", encoding="GBK",errors="ignore") as f:
-                f.write(template.replace("{{内容}}", origin).replace(
-                    "{{标题}}", output_name))
-            print("[提醒]保存完毕！")
-    else:
-        print("[警告]缓冲区为空！")
-
-# 保存为文本文件
-def save_as_txt(event = None):
-    origin = get_buffer()
-    if origin != "":
-        if not os.path.exists("output"):
-            os.makedirs("output")
-        # 打开窗口让用户选择
-        decide, file_path, output_name = ask_save_file("output",".txt")
-        if decide:
-            with open(file_path, "w", encoding="UTF-8",errors="ignore") as f:
-                f.write(origin)
-            print("[提醒]保存完毕！")
-    else:
-        print("[警告]缓冲区为空！")
 
 '''
 # 文本生成器功能
@@ -232,3 +222,59 @@ def text_output_clipboard(event = None):
         print("[提醒]已将文本输出到剪贴板")
     else:
         print("[提醒]缓冲区为空，未能复制。")
+
+
+'''
+# 存储功能
+'''
+# 打开窗口，询问保存路径
+def ask_save_file(default_name: str,suffix: str):
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    filetype = []
+    if suffix in [".htm",".html"]:
+        filetypes= [("不全书HTML文件", ".htm .html")]
+    elif suffix in [".doc",".rtf"]:
+        filetypes= [("RTF文件", ".doc .docx .rtf")]
+    elif suffix == ".txt":
+        filetypes= [("文本文件", ".txt")]
+    user_path = filedialog.asksaveasfile(title="请选择保存位置", initialdir="./output/", initialfile=default_name + suffix, filetypes=filetype, defaultextension=suffix)
+    if user_path == None:
+        print("[提醒]已取消保存。")
+        return False, "", ""
+    print("[提醒]正在保存至", user_path.name)
+    file_name = os.path.splitext(os.path.basename(user_path.name))[0]
+    return True, user_path.name, file_name
+
+# 保存为html文件（使用模板）
+def save_as_htm(event = None):
+    origin = get_buffer()
+    if origin != "":
+        page_default_name = get_page_default_name(origin)
+        template: str = ""
+        with open("template/Empty.htm", "r", encoding="GBK") as f:
+            template = f.read()
+        # 打开窗口让用户选择
+        decide, file_path, output_name = ask_save_file(page_default_name,".htm")
+        if decide:
+            with open(file_path, "w", encoding="GBK",errors="ignore") as f:
+                f.write(template.replace("{{内容}}", origin).replace(
+                    "{{标题}}", output_name))
+            print("[提醒]保存完毕！")
+    else:
+        print("[警告]缓冲区为空！")
+
+# 保存为文本文件
+def save_as_txt(event = None):
+    origin = get_buffer()
+    if origin != "":
+        if not os.path.exists("output"):
+            os.makedirs("output")
+        # 打开窗口让用户选择
+        decide, file_path, output_name = ask_save_file("output",".txt")
+        if decide:
+            with open(file_path, "w", encoding="UTF-8",errors="ignore") as f:
+                f.write(origin)
+            print("[提醒]保存完毕！")
+    else:
+        print("[警告]缓冲区为空！")

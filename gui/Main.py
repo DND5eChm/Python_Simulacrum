@@ -33,14 +33,14 @@ class Simulacrum(tkinter.Tk):
         #功能列表
         a_big_title(tabarea,"功能 Traits")
         a_text(tabarea,"果园拟像术是用于处理html或rtf（doc文件之类的），靠暴力匹配去除其中无效的style等并格式化的工具。此版本并不稳定，请不要放心使用。\n"\
-        "制表器识别|、(tabarea)、空格分隔单元格，识别换行为分行。"
+        "制表器可识别 | 符号、tab空格、空格分隔单元格，识别换行为分行。可以从Excel等地复制粘贴来生成表格"
         )
         a_title(tabarea,"测试 Test")
         a_button(tabarea,"测试A","获取剪贴板源数据（不处理）。",get_clipboard)
         a_button(tabarea,"测试B","预处理现有文本。",preprocess)
         a_title(tabarea,"获取 Input")
         a_button(tabarea,"粘贴","将剪贴板内数据粘贴到编辑器内。",get_clipboard_and_preprocess)
-        #a_button(tabarea,"打开文件。打开本地的一个文件，将其读取到编辑器内。",load_file)
+        a_button(tabarea,"打开文件","打开本地的一个文件，将其读取到编辑器内。",ask_open_file)
         a_title(tabarea,"HTML处理 HTML Process")
         a_button(tabarea,"净化之力","删除其所有html标签", html_to_text)
         a_button(tabarea,"果园侵袭","将其转换为果园BBcode。", html_to_bbcode)
@@ -62,7 +62,7 @@ class Simulacrum(tkinter.Tk):
         
         #编辑区域
         a_big_title(editorarea,"编辑器 Editor")
-        editor = Editor(editorarea,width=80,height=50,wrap="char",font=("微软雅黑", 11))
+        editor = Editor(editorarea,width=60,height=35,wrap="char",font=("微软雅黑", 11))
         editor.pack(fill="both", expand=True)
         
         #PREVIEWER = HtmlFrame(self,width=20)
