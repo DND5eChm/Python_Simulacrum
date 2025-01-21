@@ -1,9 +1,7 @@
 from tkinter import *
 from tkinter.ttk import *
-from gui.Events import *
-#from gui.Functions import *
 '''
-# 缓存区类
+# 编辑器·缓存区类
 '''
 class Editor(Text):
     Buffer = None

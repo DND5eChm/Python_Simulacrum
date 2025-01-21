@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 """
 Created on Sep 24, 2013
-
-@author: RandomHardcoreJerks
+@author: RandomHardcoreJerks（有修改）
 
 Requires pywin32
-
 
 original: http://code.activestate.com/recipes/474121/
     # HtmlClipboard
@@ -25,11 +23,9 @@ import random
 import win32clipboard
 
 #---------------------------------------------------------------------------
-#  Convenience functions to do the most common operation
-
 def HasHtml():
     """
-    Return True if there is a Html fragment in the clipboard..
+    如果当前剪贴板存在Html对象，返回True。
     """
     cb = HtmlClipboard()
     return cb.HasHtmlFormat()
@@ -37,7 +33,7 @@ def HasHtml():
 
 def GetHtml():
     """
-    Return the Html fragment from the clipboard or None if there is no Html in the clipboard.
+    返回剪贴板内的Html对象，如果没有则返回None。
     """
     cb = HtmlClipboard()
     if cb.HasHtmlFormat():
@@ -48,8 +44,7 @@ def GetHtml():
 
 def PutHtml(fragment,test:bool = False):
     """
-    Put the given fragment into the clipboard.
-    Convenience function to do the most common operation
+    将给定的Html对象写入剪贴板。
     """
     cb = HtmlClipboard()
     if test:
