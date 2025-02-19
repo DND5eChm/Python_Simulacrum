@@ -1,4 +1,4 @@
-VERSION = "1.0 测试版"
+VERSION = "1.0.1"
 
 from gui import Simulacrum
 

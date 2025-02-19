@@ -271,6 +271,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     template_normallabel = ""
     template_spelllabel = ""
     template_italic = ""
+    template_fixedword = ""
     with open(f"template/{template_folder}/Base.htm", "r") as f:
         base = f.read()
     with open(f"template/{template_folder}/SubTitle.htm", "r") as f:
@@ -285,10 +286,13 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         template_normallabel = f.read()
     with open(f"template/{template_folder}/Italic.htm", "r") as f:
         template_italic = f.read()
+    with open(f"template/{template_folder}/FixedWord.htm", "r") as f:
+        template_fixedword = f.read()
     
     # 识别内容
     #try:
     if 1 == 1:
+        data = data.replace(" "," ") #防止神秘小空格炸格式
         monster = Monster(data)
         
         #将内容塞入Base模板
@@ -331,16 +335,23 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         
         for content_line in monster.contents:
             result = ""
-            for word in ["特质","动作","附赠动作","反应","传奇动作","神话动作"]:
-                if content_line.startswith(word):
-                    result = template_subtitle.replace("{{标题}}",content_line)
-                    print("[提醒]发现小标题："+content_line.strip())
-                    break
-            for word in ["随意","任意","每项1/日","每项2/日","每项3/日","1/日","2/日","3/日"]:
-                if content_line.startswith(word+":") or content_line.startswith(word+"："):
-                    result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
-                    print("[提醒]发现法术行："+content_line.strip())
-                    break
+            
+            #定型文
+            if content_line.startswith("传奇动作次数") and content_line.endswith("。"):
+                result = template_fixedword.replace("{{定型文}}",content_line)
+                print("[提醒]发现定型文："+content_line.strip())
+            else:
+                #小标题
+                for word in ["特质","动作","附赠动作","反应","传奇动作","神话动作"]:
+                    if content_line.startswith(word):
+                        result = template_subtitle.replace("{{标题}}",content_line)
+                        print("[提醒]发现小标题："+content_line.strip())
+                        break
+                for word in ["随意","任意","每项1/日","每项2/日","每项3/日","1/日","2/日","3/日"]:
+                    if content_line.startswith(word+":") or content_line.startswith(word+"："):
+                        result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
+                        print("[提醒]发现法术行："+content_line.strip())
+                        break
             if result == "":
                 if "。" in content_line:
                     right = content_line.find("。")
@@ -380,7 +391,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                     result = content_line
                 
                 #给特殊文本词汇加斜体
-                for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","成功或失败"],["失败"],["成功"]]:
+                for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","成功或失败"],["失败"],["成功"],["触发"],["回应","响应"],["效果"]]:
                     for word in words: #每组仅匹配一次
                         if (word+":") in result:
                             result = result.replace(word+":",template_italic.replace("{{内容}}",word+"："),1)
