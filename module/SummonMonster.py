@@ -19,13 +19,14 @@ class Monster:
         self.wis = self.find_stat_line(["感知","wis"],"attr").split("|")
         self.cha = self.find_stat_line(["魅力","cha"],"attr").split("|")
         
-        self.skill = self.find_stat_line(["技能","skill"])
-        self.save = self.find_stat_line(["豁免","save"])
-        self.resistance = self.find_stat_line(["伤害抗性","抗性","damage resisitance","resistance"])
-        self.damage_immune = self.find_stat_line(["伤害免疫","damage immune"])
-        self.condition_immune = self.find_stat_line(["状态免疫","condition immune"])
+        self.skill = self.find_stat_line(["技能","skills"])
+        self.save = self.find_stat_line(["豁免","saves"])
+        self.vulner = self.find_stat_line(["易伤","vulnerabilities"])
+        self.resistance = self.find_stat_line(["伤害抗性","抗性","damage resisitances","resistances"])
+        self.damage_immune = self.find_stat_line(["伤害免疫","damage immunities"])
+        self.condition_immune = self.find_stat_line(["状态免疫","condition immunities"])
         if self.damage_immune == "" and self.condition_immune == "":
-            self.immune = self.find_stat_line(["免疫","immune"])
+            self.immune = self.find_stat_line(["免疫","immunities"])
         elif self.damage_immune == "":
             self.immune = self.condition_immune
         elif self.condition_immune == "":
@@ -33,8 +34,8 @@ class Monster:
         else:
             self.immune = self.damage_immune+"；"+self.condition_immune
         self.gears = self.find_stat_line(["装备","gears"])
-        self.sense = self.find_stat_line(["感官","sense"])
-        self.lang = self.find_stat_line(["语言","language"])
+        self.sense = self.find_stat_line(["感官","senses"])
+        self.lang = self.find_stat_line(["语言","languages"])
         self.cr = self.find_stat_line(["挑战等级","cr","challenge"])
         
         
@@ -311,6 +312,9 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         #if monster.save != "":
         #    line = template_statlabel.replace("{{名称}}","豁免").replace("{{内容}}",monster.save)
         #    contents.append(line)
+        if monster.vulner != "":
+            line = template_statlabel.replace("{{名称}}","易伤").replace("{{内容}}",monster.vulner)
+            contents.append(line)
         if monster.resistance != "":
             line = template_statlabel.replace("{{名称}}","抗性").replace("{{内容}}",monster.resistance)
             contents.append(line)
