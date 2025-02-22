@@ -1,3 +1,4 @@
+import re
 
 class Monster:
     def __init__(self, data):
@@ -187,9 +188,18 @@ class Monster:
                                 if thing[:right].count("\t") == 2:
                                     output = thing[:right].replace("\t","|")
                                     break
-                        elif "（" in thing and "）" in thing:
+                        elif "（" in thing and "）" in thing: #老版？二次检查吧
                             need_second_check = True
-                        elif " " in thing: #没有括号还用空格分割，很麻烦的情况
+                        elif "+" in thing or "-" in thing: #不分割？你*没了我靠
+                            if thing.count("+") + thing.count("-") == 2: #正好两次，那也基本没问题了
+                                output = thing.replace("+","|+").replace("-","|-")
+                                break
+                            elif " " in thing:
+                                right = thing.find(" ")
+                                if thing[:right].count("+") + thing[:right].count("-") == 2:
+                                    output = thing[:right].replace("+","|+").replace("-","|-")
+                                    break
+                        elif " " in thing: #用空格分割，很麻烦的情况
                             if thing.count(" ") == 2: #正好两次，没...没问题吗？
                                 output = thing.replace(" ","|")
                                 break
@@ -299,6 +309,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     template_italic = ""
     template_fixedword = ""
     template_term = ""
+    template_spell = ""
     with open(f"template/{template_folder}/Base.htm", "r") as f:
         base = f.read()
     with open(f"template/{template_folder}/SubTitle.htm", "r") as f:
@@ -317,6 +328,8 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         template_fixedword = f.read()
     with open(f"template/{template_folder}/Term.htm", "r") as f:
         template_term = f.read()
+    with open(f"template/{template_folder}/Spell.htm", "r") as f:
+        template_spell = f.read()
     
     # 识别内容
     #try:
@@ -367,6 +380,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         contents.append("")
         
         for content_line in monster.contents:
+            action_name = ""
             result = ""
             
             #定型文
@@ -380,6 +394,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                         result = template_subtitle.replace("{{标题}}",content_line)
                         print("[提醒]发现小标题："+content_line.strip())
                         break
+                #法术上色
                 for word in ["随意","任意","每项1/日","每项2/日","每项3/日","1/日","2/日","3/日"]:
                     if content_line.startswith(word+"："):
                         result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
@@ -408,19 +423,23 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                             if en_now:
                                 sus = True #你小子先英文再中文，很可疑啊
                                 en_now = False
-                    if cnwords >= 1 and cnwords <= 8 and enwords >= 3:#动作英文里最短的Ram都有3个字,最短的中文是1个字,最长的中文都只有8个字
+                    
+                    #动作英文里最短的Ram都有3个字,最短的中文是1个字,最长的中文都只有8个字
+                    if cnwords >= 1 and cnwords <= 8 and enwords >= 3:
                         if sus: #你很可疑，我得再检查一下
                             for sus_word in ["可以","长休","短休","使用次数","目标","必须","否则","失败","成功","攻击","豁免"]:
                                 if sus_word in action_name:
+                                    action_name = ""
                                     result = content_line
                         #如果到现在还没处理出文本，说明完美符合动作项的结构
                         if result == "": 
-                            action_content = content_line[right+1:]
-                            result = template_actionlabel.replace("{{名称}}",action_name).replace("{{内容}}",action_content)
+                            result = content_line[right+1:]
                             print("[提醒]发现动作项："+action_name)
                     else:
-                        result = template_normallabel.replace("{{内容}}",content_line)
+                        action_name = ""
+                        result = content_line
                 else:
+                    action_name = ""
                     result = content_line
                 
                 #给动作项的特殊文本词汇加斜体
@@ -431,12 +450,23 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                             break
                 
                 #给术语词汇变绿
-                for word in ["目盲","受擒","中毒","魅惑","失能","倒地","耳聋","隐形","束缚","力竭","麻痹","震慑","恐慌","石化","昏迷","异怪","元素","怪兽","野兽","妖精","泥怪","天族","邪魔","植物","构装","巨人","亡灵","龙类","类人", "半身掩护","四分之三掩护","全身掩护""锥状","柱状","线状","立方","光环","球状","明亮光照","微光光照","黑暗","轻度遮蔽","重度遮蔽"]:
+                term_left,term_right = template_term.split("{{内容}}",1)
+                for word in ["目盲","受擒","中毒","魅惑","失能","倒地","耳聋","束缚","力竭","麻痹","震慑","恐慌","石化","昏迷","异怪","元素","怪兽","野兽","妖精","泥怪","天族","邪魔","植物","构装","亡灵","龙类","类人", "半身掩护","四分之三掩护","全身掩护","锥状","柱状","线状","立方","光环","球状","明亮光照","微光光照","轻度遮蔽","重度遮蔽","借机攻击","撤离","躲藏","疾走","回避"]:
                     if word in result:
-                        result = result.replace(word,template_term.replace("{{内容}}",word))
+                        result = result.replace(word,term_left+word+term_right)
+                #几个有常见混淆的用正则表达式去匹吧
+                result = re.sub(r'(?<!(此|该|火|云|霜|石|风暴|山丘|双头|独眼))巨人(?!之)',term_left+"巨人"+term_right, result)
+                result = re.sub(r'(?<!识破)隐形(?!术)',term_left+"隐形"+term_right, result)
+                result = re.sub(r'黑暗(?!(术|视觉))',term_left+"黑暗"+term_right, result)
+                #手动法术上色
+                if result.count("#") >= 2:
+                    spell_left,spell_right = template_spell.split("{{内容}}",1)
+                    result = re.sub(r'\#(.*?)\#',spell_left+r'\1'+spell_right, result)
             # 加入内容列表
-            if result != "":
-                contents.append(result)
+            if action_name != "":
+                contents.append(template_actionlabel.replace("{{名称}}",action_name).replace("{{内容}}",result))
+            elif result != "":
+                contents.append(template_normallabel.replace("{{内容}}",result))
     #except:
     #    print("[警告]识别失败，请确认你使用了正确的数据")
     
