@@ -109,17 +109,17 @@ class Monster:
         mustbe = []
         possible = []
         possible_low = []
-        fake_words = ["，","（","(","或","检","减","豁"] #后面出现这些字说明不是data_line
+        fake_words = ["，","。","或","检","减","豁"] #如果不确定的情况下，后面出现这些字说明不是data_line
         for line in self.stats:
             for prefix in data_prefixs:
                 if line.lower().startswith(prefix): #开头匹配，最优的情况
-                    if line[len(prefix)] in [" ",":","："]: #完美匹配，加入肯定列表
+                    if line[len(prefix)] in [" ","："]: #完美匹配，加入肯定列表
                         mustbe.append(line[len(prefix)+1:].strip())
                     elif line[len(prefix)] not in fake_words: #不完美匹配，但不是行中文本，加入可能列表
                         possible.append(line[len(prefix):].strip())
                 elif prefix in line.lower(): #行中匹配，不太妙的情况
                     left = line.find(prefix)
-                    if line[left+len(prefix)] in [" ",":","："]: #但依旧完美匹配
+                    if line[left+len(prefix)] in [" ","："]: #但依旧完美匹配
                         if len(line) > left+len(prefix) and line[left+len(prefix)] not in fake_words: #确认不是行中文本，加入可能列表
                             possible.append(line[left+len(prefix)+1:].strip())
                     else: #不完美匹配
@@ -154,7 +154,7 @@ class Monster:
                                 if thing[:right].count("\t") == 2:
                                     output = thing[:right].replace("\t","|")
                                     break
-                        elif "(" in thing and ")" in thing or "（" in thing and "）" in thing:
+                        elif "（" in thing and "）" in thing:
                             need_second_check = True
                         elif " " in thing: #没有括号还用空格分割，很麻烦的情况
                             if thing.count(" ") == 2: #正好两次，没...没问题吗？
@@ -170,11 +170,7 @@ class Monster:
                 # 有括号的一众
                 if need_second_check or data_type == "pattern":
                     for thing in lists[depth]:
-                        if "(" in thing and ")" in thing:
-                            right = thing.find(")")+1
-                            output = thing[:right]
-                            break
-                        elif "（" in thing and "）" in thing:
+                        if "（" in thing and "）" in thing:
                             right = thing.find("）")+1
                             output = thing[:right]
                             break
@@ -195,11 +191,7 @@ class Monster:
             if output != "":
                 # 六维括号版处理
                 if data_type == "attr":
-                    if "(" in output and ")" in output:
-                        left = thing.find("(")
-                        right = thing.find(")")
-                        output = output[:left]+"|"+output[left+1:right]+"|"
-                    elif "（" in thing and "）" in thing:
+                    if "（" in thing and "）" in thing:
                         left = thing.find("（")
                         right = thing.find("）")
                         output = output[:left]+"|"+output[left+1:right]+"|"
@@ -273,6 +265,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     template_spelllabel = ""
     template_italic = ""
     template_fixedword = ""
+    template_term = ""
     with open(f"template/{template_folder}/Base.htm", "r") as f:
         base = f.read()
     with open(f"template/{template_folder}/SubTitle.htm", "r") as f:
@@ -289,11 +282,14 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         template_italic = f.read()
     with open(f"template/{template_folder}/FixedWord.htm", "r") as f:
         template_fixedword = f.read()
+    with open(f"template/{template_folder}/Term.htm", "r") as f:
+        template_term = f.read()
     
     # 识别内容
     #try:
     if 1 == 1:
-        data = data.replace(" "," ") #防止神秘小空格炸格式
+        data = data.replace(" "," ").replace("&nbsp;"," ") #防止神秘小空格炸格式
+        data = data.replace("(","（").replace(")","）").replace(";","；").replace(":","：").replace("5-6","5~6").replace("4-6","4~6") #半角符号转全角符号
         monster = Monster(data)
         
         #将内容塞入Base模板
@@ -352,7 +348,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                         print("[提醒]发现小标题："+content_line.strip())
                         break
                 for word in ["随意","任意","每项1/日","每项2/日","每项3/日","1/日","2/日","3/日"]:
-                    if content_line.startswith(word+":") or content_line.startswith(word+"："):
+                    if content_line.startswith(word+"："):
                         result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
                         print("[提醒]发现法术行："+content_line.strip())
                         break
@@ -370,9 +366,9 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                         if (not pattern_now) and (char.isdigit() or char == " " or char.encode().isalpha()):
                             en_now = True
                             enwords = enwords + 1
-                        elif char in ["(","（"]:
+                        elif char == "（":
                             pattern_now = True
-                        elif char in [")","）"]:
+                        elif char  == "）":
                             pattern_now = False
                         elif not pattern_now: #不符合上述特征，即为中文字符
                             cnwords = cnwords + 1
@@ -394,15 +390,17 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                 else:
                     result = content_line
                 
-                #给特殊文本词汇加斜体
-                for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","成功或失败"],["失败"],["成功"],["触发"],["回应","响应"],["效果"]]:
+                #给动作项的特殊文本词汇加斜体
+                for words in [["近战或远程武器攻击","近战武器攻击","远程武器攻击"],["近战或远程法术攻击","近战法术攻击","远程法术攻击"],["近战或远程攻击检定","近战攻击检定","远程攻击检定"],["不论是否命中","命中或失手"],["命中"],["失手"],["力量豁免检定","敏捷豁免检定","体质豁免检定","智力豁免检定","感知豁免检定","魅力豁免检定","豁免检定"],["不论是否成功","失败或成功","成功或失败"],["首次失败"],["再次失败"],["失败"],["成功"],["触发"],["回应","响应"],["效果"]]:
                     for word in words: #每组仅匹配一次
-                        if (word+":") in result:
-                            result = result.replace(word+":",template_italic.replace("{{内容}}",word+"："),1)
-                            break
-                        elif (word+"：") in result:
+                        if (word+"：") in result:
                             result = result.replace(word+"：",template_italic.replace("{{内容}}",word+"："),1)
                             break
+                
+                #给术语词汇变绿
+                for word in ["目盲","受擒","中毒","魅惑","失能","倒地","耳聋","隐形","束缚","力竭","麻痹","震慑","恐慌","石化","昏迷","异怪","元素","怪兽","野兽","妖精","泥怪","天族","邪魔","植物","构装","巨人","亡灵","龙类","类人", "半身掩护","四分之三掩护","全身掩护""锥状","柱状","线状","立方","光环","球状","明亮光照","微光光照","黑暗","轻度遮蔽","重度遮蔽"]:
+                    if word in result:
+                        result = result.replace(word,template_term.replace("{{内容}}",word))
             # 加入内容列表
             if result != "":
                 contents.append(result)
