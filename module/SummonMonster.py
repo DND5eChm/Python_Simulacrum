@@ -110,21 +110,54 @@ class Monster:
         possible = []
         possible_low = []
         fake_words = ["，","（","(","或","检","减","豁"] #后面出现这些字说明不是data_line
-        for line in self.stats:
+        stack_mode = False #跨行堆叠模式
+        stacks = 0
+        stacked_text = ""
+        
+        for line in self.stats[1:]:
+            if stack_mode: #属性表格的堆叠模式，多行组合来作为一行数据
+                if stacks == 1 and line.isdigit(): #六维属性
+                    stacks += 1
+                    stacked_text += line
+                    continue
+                elif stacks < 4 and (line.startswith("+") or line.startswith("-")): #六维加值
+                    stacks += 1
+                    stacked_text += "|"+line
+                    if stacks == 4: #堆叠获取完毕
+                        stack_mode = False
+                        possible.append(stacked_text.strip())
+                    continue
+                else:
+                    stack_mode = False
             for prefix in data_prefixs:
-                if line.lower().startswith(prefix): #开头匹配，最优的情况
+                
+                #处理本行是否匹配
+                if len(line) < len(prefix): #长度不够，跳过
+                    continue
+                elif line.lower().startswith(prefix) and len(line) > len(prefix): #开头匹配，最优的情况
                     if line[len(prefix)] in [" ",":","："]: #完美匹配，加入肯定列表
                         mustbe.append(line[len(prefix)+1:].strip())
+                        break
                     elif line[len(prefix)] not in fake_words: #不完美匹配，但不是行中文本，加入可能列表
                         possible.append(line[len(prefix):].strip())
-                elif prefix in line.lower(): #行中匹配，不太妙的情况
+                        break
+                elif prefix in line.lower() and len(line) > len(prefix)+1: #行中匹配，不太妙的情况
                     left = line.find(prefix)
-                    if line[left+len(prefix)] in [" ",":","："]: #但依旧完美匹配
-                        if len(line) > left+len(prefix) and line[left+len(prefix)] not in fake_words: #确认不是行中文本，加入可能列表
-                            possible.append(line[left+len(prefix)+1:].strip())
-                    else: #不完美匹配
-                        if len(line) > left+len(prefix) and line[left+len(prefix)] not in fake_words: #确认不是行中文本，加入不太可能列表
-                            possible_low.append(line[left+len(prefix):].strip())
+                    if left+len(prefix) < len(line):
+                        if line[left+len(prefix)] in [" ",":","："]: #但依旧完美匹配
+                            if len(line) > left+len(prefix) and line[left+len(prefix)] not in fake_words: #确认不是行中文本，加入可能列表
+                                possible.append(line[left+len(prefix)+1:].strip())
+                                break
+                        else: #不完美匹配
+                            if len(line) > left+len(prefix) and line[left+len(prefix)] not in fake_words: #确认不是行中文本，加入不太可能列表
+                                possible_low.append(line[left+len(prefix):].strip())
+                                break
+                elif data_type == "attr": #跨行匹配，最最最最麻烦的情况
+                    if prefix == line.lower():
+                        stack_mode = True
+                        stacks = 1
+                        stacked_text = ""
+                        break
         
         #根据类型，循环尝试判断是否可能
         output = ""
