@@ -455,9 +455,9 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                     if word in result:
                         result = result.replace(word,term_left+word+term_right)
                 #几个有常见混淆的用正则表达式去匹吧
-                result = re.sub(r'(?<!(此|该|火|云|霜|石|风暴|山丘|双头|独眼))巨人(?!之)',term_left+"巨人"+term_right, result)
-                result = re.sub(r'(?<!识破)隐形(?!术)',term_left+"隐形"+term_right, result)
-                result = re.sub(r'黑暗(?!(术|视觉))',term_left+"黑暗"+term_right, result)
+                result = re.sub(r'(?<!(此|该|火|云|霜|石|暴|丘|头|眼))巨人(?!之)',term_left+"巨人"+term_right, result)
+                result = re.sub(r'(?<!破)隐形(?!术)',term_left+"隐形"+term_right, result)
+                result = re.sub(r'黑暗(?!(术|视))',term_left+"黑暗"+term_right, result)
                 #手动法术上色
                 if result.count("#") >= 2:
                     spell_left,spell_right = template_spell.split("{{内容}}",1)
