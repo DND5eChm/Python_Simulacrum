@@ -214,9 +214,18 @@ class Monster:
                 if need_second_check or data_type == "pattern":
                     for thing in lists[depth]:
                         if "（" in thing and "）" in thing:
+                            left = thing.find("（")
                             right = thing.find("）")+1
-                            output = thing[:right]
-                            break
+                            #检查这个括号是不是自己的
+                            if thing[:left].strip().isdigit():
+                                output = thing[:right]
+                                break
+                            elif " " in thing: #是不是把不需要的部分包裹进去了？
+                                left = thing.find(" ")
+                                if thing[:left].strip().isdigit():
+                                    output = thing[:left].strip()
+                            else: #不知道什么情况，以防万一先给过吧
+                                output = thing[:right]
                         elif " " in thing: #只写了数值没打括号？
                             right = thing.find(" ")
                             if thing[:right].isdigit(): 
@@ -451,11 +460,10 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                 
                 #给术语词汇变绿
                 term_left,term_right = template_term.split("{{内容}}",1)
-                for word in ["目盲","受擒","中毒","魅惑","失能","倒地","耳聋","束缚","力竭","麻痹","震慑","恐慌","石化","昏迷","异怪","元素","怪兽","野兽","妖精","泥怪","天族","邪魔","植物","构装","亡灵","龙类","类人", "半身掩护","四分之三掩护","全身掩护","锥状","柱状","线状","立方","光环","球状","明亮光照","微光光照","轻度遮蔽","重度遮蔽","借机攻击","撤离","躲藏","疾走","回避","D20检定"]:
+                for word in ["目盲","受擒","中毒","魅惑","失能","倒地","耳聋","束缚","力竭","麻痹","震慑","恐慌","石化","昏迷","半身掩护","四分之三掩护","全身掩护","锥状","柱状","线状","立方","光环","球状","明亮光照","微光光照","轻度遮蔽","重度遮蔽","借机攻击","撤离","躲藏","疾走","回避","D20检定"]:
                     if word in result:
                         result = result.replace(word,term_left+word+term_right)
                 #几个有常见混淆的用正则表达式去匹吧
-                result = re.sub(r'(?<!(此|该|火|云|霜|石|暴|丘|头|眼))巨人(?!之)',term_left+"巨人"+term_right, result)
                 result = re.sub(r'(?<!破)隐形(?!术)',term_left+"隐形"+term_right, result)
                 result = re.sub(r'黑暗(?!(术|视))',term_left+"黑暗"+term_right, result)
                 #手动法术上色
