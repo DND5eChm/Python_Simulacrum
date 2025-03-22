@@ -310,6 +310,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     #获取模板内容
     base = ""
     contents = []
+    stat_contents = []
     template_subtitle = ""
     template_statlabel = ""
     template_actionlabel = ""
@@ -359,35 +360,33 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         #剩下的数据栏
         if monster.skill != "":
             line = template_statlabel.replace("{{名称}}","技能").replace("{{内容}}",monster.skill)
-            contents.append(line)
+            stat_contents.append(line)
         #if monster.save != "":
         #    line = template_statlabel.replace("{{名称}}","豁免").replace("{{内容}}",monster.save)
-        #    contents.append(line)
+        #    stat_contents.append(line)
         if monster.vulner != "":
             line = template_statlabel.replace("{{名称}}","易伤").replace("{{内容}}",monster.vulner)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.resistance != "":
             line = template_statlabel.replace("{{名称}}","抗性").replace("{{内容}}",monster.resistance)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.immune != "":
             line = template_statlabel.replace("{{名称}}","免疫").replace("{{内容}}",monster.immune)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.gears != "":
             line = template_statlabel.replace("{{名称}}","装备").replace("{{内容}}",monster.gears)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.sense != "":
             line = template_statlabel.replace("{{名称}}","感官").replace("{{内容}}",monster.sense)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.lang != "":
             line = template_statlabel.replace("{{名称}}","语言").replace("{{内容}}",monster.lang)
-            contents.append(line)
+            stat_contents.append(line)
         if monster.cr != "":
             line = template_statlabel.replace("{{名称}}","CR").replace("{{内容}}",monster.cr)
-            contents.append(line)
+            stat_contents.append(line)
         
-        #空一行
-        contents.append("")
-        
+        #核心内容
         for content_line in monster.contents:
             action_name = ""
             result = ""
@@ -479,4 +478,4 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     #    print("[警告]识别失败，请确认你使用了正确的数据")
     
     
-    return base.replace("{{内容}}","\n".join(contents))
+    return base.replace("{{可选数据}}","\n".join(stat_contents)).replace("{{内容}}","\n".join(contents))
