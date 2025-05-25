@@ -260,7 +260,7 @@ def cmd_make_monster_statblock_bbc(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Goddess5EMonster")
-        print("[提醒]生物数据制作完成！")
+        print("[提醒]东风版果园怪物数据卡制作完成！")
         set_buffer(output,"bbcode")
 
 # 功能：将文本生成为不全书怪物模板html
@@ -268,7 +268,7 @@ def cmd_make_monster_statblock(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"Notall5EMonster")
-        print("[提醒]生物数据制作完成！")
+        print("[提醒]不全书2024数据卡制作完成！")
         set_buffer(output,"html")
         
 # 功能：将文本生成为刺猬版怪物模板html
@@ -276,7 +276,15 @@ def cmd_make_monster_statblock_hedgehog(event = None):
     origin = get_buffer("text")
     if origin != "":
         output = summon_monster(origin,"HedgehogMonster")
-        print("[提醒]生物数据制作完成！")
+        print("[提醒]刺猬版数据卡制作完成！")
+        set_buffer(output,"html")
+        
+# 功能：将文本生成为咸喵版怪物模板html
+def cmd_make_monster_statblock_saltmeow(event = None):
+    origin = get_buffer("text")
+    if origin != "":
+        output = summon_monster(origin,"SaltymeowMonster",True) #Legacy模式
+        print("[提醒]咸喵版数据卡制作完成！")
         set_buffer(output,"html")
 '''
 # 输出

@@ -52,6 +52,7 @@ class Simulacrum(tkinter.Tk):
         a_button(tabarea,"怪物创成α","将其转化为东风版果园怪物数据卡。", cmd_make_monster_statblock_bbc)
         a_button(tabarea,"怪物创成β","将其转化为不全书5E2024怪物数据卡。", cmd_make_monster_statblock)
         a_button(tabarea,"怪物创成γ","将其转化为刺猬版怪物数据卡。", cmd_make_monster_statblock_hedgehog)
+        a_button(tabarea,"怪物创成δ","将其转化为咸喵版怪物数据卡。", cmd_make_monster_statblock_saltmeow)
         a_title(tabarea,"输出 Output")
         a_button(tabarea,"复制·HTML","将其转化为HTML数据并复制到剪贴板。", cmd_html_output_clipboard)
         a_button(tabarea,"复制·CHM","将其转化为CHM用文本并复制到剪贴板。", cmd_html_output_clipboard_test)

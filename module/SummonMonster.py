@@ -13,12 +13,13 @@ class Monster:
         self.ac = self.find_stat_line(["护甲等级","ac"],"pattern")
         self.speed = self.find_stat_line(["速度","speed"])
         
-        self.str = self.find_stat_line(["力量","str"],"attr").split("|")
-        self.dex = self.find_stat_line(["敏捷","dex"],"attr").split("|")
-        self.con = self.find_stat_line(["体质","con"],"attr").split("|")
-        self.int = self.find_stat_line(["智力","int"],"attr").split("|")
-        self.wis = self.find_stat_line(["感知","wis"],"attr").split("|")
-        self.cha = self.find_stat_line(["魅力","cha"],"attr").split("|")
+        if not self.has_extraline_attrs(): #如果有跨行属性值，由跨行属性值决定六项属性
+            self.str = self.find_stat_line(["力量","str"],"attr").split("|")
+            self.dex = self.find_stat_line(["敏捷","dex"],"attr").split("|")
+            self.con = self.find_stat_line(["体质","con"],"attr").split("|")
+            self.int = self.find_stat_line(["智力","int"],"attr").split("|")
+            self.wis = self.find_stat_line(["感知","wis"],"attr").split("|")
+            self.cha = self.find_stat_line(["魅力","cha"],"attr").split("|")
         
         self.skill = self.find_stat_line(["技能","skills"])
         self.save = self.find_stat_line(["豁免","saves"])
@@ -40,29 +41,38 @@ class Monster:
         self.cr = self.find_stat_line(["挑战等级","cr","challenge"])
         
         
-        #处理旧版豁免
+        #旧版豁免转新版豁免
         if self.save != "":
             six_saves = self.save.replace("，","|").replace(",","|").replace("、","|").split("|")
             for six_save in six_saves:
                 six_save = six_save.lower().strip()
                 if six_save.startswith("力量") or six_save.startswith("str"):
                     self.str[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 力量豁免=\""+self.str[2]+"\"")
                 elif six_save.startswith("敏捷") or six_save.startswith("dex"):
                     self.dex[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 敏捷豁免=\""+self.dex[2]+"\"")
                 elif six_save.startswith("体质") or six_save.startswith("con"):
                     self.con[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 体质豁免=\""+self.con[2]+"\"")
                 elif six_save.startswith("智力") or six_save.startswith("int"):
                     self.int[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 智力豁免=\""+self.int[2]+"\"")
                 elif six_save.startswith("感知") or six_save.startswith("wis"):
                     self.wis[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 感知豁免=\""+self.wis[2]+"\"")
                 elif six_save.startswith("魅力") or six_save.startswith("cha"):
                     self.cha[2] = six_save[2:].strip()
-                    print("[提醒]找到怪物数据 魅力豁免=\""+self.cha[2]+"\"")
+        else: #新版豁免转旧版豁免
+            saves = []
+            if self.str[1] != self.str[2]:
+                saves.append("力量"+self.str[2])
+            if self.dex[1] != self.dex[2]:
+                saves.append("敏捷"+self.dex[2])
+            if self.con[1] != self.con[2]:
+                saves.append("体质"+self.con[2])
+            if self.int[1] != self.int[2]:
+                saves.append("智力"+self.int[2])
+            if self.wis[1] != self.wis[2]:
+                saves.append("感知"+self.wis[2])
+            if self.cha[1] != self.cha[2]:
+                saves.append("魅力"+self.cha[2])
+            self.save = "，".join(self.saves)
         
         #优化一下一些空白位置的外观
         if self.str[2] == "":
@@ -104,6 +114,69 @@ class Monster:
                     count = 1
                 else:
                     return line.strip()
+    
+    #检查是否有跨行属性值
+    def has_extraline_attrs(self):
+        index = 1
+        found = False
+        for line in self.stats[1:]:
+            if "力量" in line and "敏捷" in line and "体质" in line and "感知" in line and "魅力" in line: #同一行同时出现六属性
+                print("[提醒]发现跨行属性值，尝试读取")
+                found = True
+                break
+            index += 1
+        if found:
+            line = self.stats[index+1]
+            attrs = []
+            matches = re.finditer(r"(\d*?)\s*（([\+\-]\d*)）", line)
+            for match in matches:
+                matched_attr = match.groups()
+                attrs.append([matched_attr[0],matched_attr[1],matched_attr[1]])
+            length = len(attrs)
+            #力量
+            if length >= 1:
+                self.str = attrs[0]
+                print("[提醒]找到怪物数据 力量=\""+"|".join(attrs[0])+"\"")
+            else:
+                self.str = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 力量")
+            #敏捷
+            if length >= 2:
+                self.dex = attrs[1]
+                print("[提醒]找到怪物数据 敏捷=\""+"|".join(attrs[1])+"\"")
+            else:
+                self.dex = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 敏捷")
+            #体质
+            if length >= 3:
+                self.con = attrs[2]
+                print("[提醒]找到怪物数据 体质=\""+"|".join(attrs[2])+"\"")
+            else:
+                self.con = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 体质")
+            #智力
+            if length >= 4:
+                self.int = attrs[3]
+                print("[提醒]找到怪物数据 智力=\""+"|".join(attrs[3])+"\"")
+            else:
+                self.int = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 智力")
+            #感知
+            if length >= 5:
+                self.wis = attrs[4]
+                print("[提醒]找到怪物数据 感知=\""+"|".join(attrs[4])+"\"")
+            else:
+                self.wis = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 感知")
+            #魅力
+            if length >= 6:
+                self.cha = attrs[5]
+                print("[提醒]找到怪物数据 魅力=\""+"|".join(attrs[5])+"\"")
+            else:
+                self.cha = ["10","+0","+0"]
+                print("[提醒]未能找到怪物数据 魅力")
+            return True
+        return False
     
     #寻找数据
     def find_stat_line(self,data_prefixs:list[str],data_type:str=""):
@@ -251,6 +324,7 @@ class Monster:
                 return output
             depth = depth + 1
         #没找到
+        print("[提醒]未能找到怪物数据 "+data_prefixs[0])
         if data_type == "attr":
             return "10|+0|+0"
         return ""
@@ -272,6 +346,9 @@ class Monster:
                 #下一行上方必是分割线
                 p_split = p_split + 1
                 found = True
+                #如果下一行开头是熟练加值的话，那算下一行去
+                if lines[p_split].startswith("熟练加值") or lines[p_split].startswith("pb"):
+                    p_split += 1
                 break
             elif line_str.startswith("特质") or line_str.startswith("动作") or line_str.startswith("附赠动作"):
                 #这一行上方就是分割线
@@ -302,11 +379,11 @@ class Monster:
             print("                  "+lines[p_split])
             return lines[:p_split],lines[p_split:]
         else:
-            print("[警告]未能找到怪物数据。")
+            print("[警告]未能找到分割位置。")
             return ["未知","未知"],[]
 
 # 使用模板生成怪物数据块
-def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
+def summon_monster(data: str,template_folder: str = "Goddess5EMonster",legacy: bool = False) -> str:
     #获取模板内容
     base = ""
     contents = []
@@ -320,6 +397,7 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
     template_fixedword = ""
     template_term = ""
     template_spell = ""
+    template_pb = ""
     with open(f"template/{template_folder}/Base.htm", "r") as f:
         base = f.read()
     with open(f"template/{template_folder}/SubTitle.htm", "r") as f:
@@ -340,39 +418,61 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         template_term = f.read()
     with open(f"template/{template_folder}/Spell.htm", "r") as f:
         template_spell = f.read()
+    if legacy:
+        with open(f"template/{template_folder}/LegacyPB.htm", "r") as f:
+            template_pb = f.read()
     
     # 识别内容
     #try:
     if 1 == 1:
-        data = data.replace(" "," ").replace("&nbsp;"," ") #防止神秘小空格炸格式
+        data = data.replace(" "," ").replace("&nbsp;"," ").replace("−","-").replace("&#8722;","-") #防止神秘小空格炸格式
         data = data.replace("(","（").replace(")","）").replace(";","；").replace(":","：").replace("5-6","5~6").replace("4-6","4~6") #半角符号转全角符号
         monster = Monster(data)
         
         #将内容塞入Base模板
         base = base.replace("{{名称}}",monster.title).replace("{{副栏}}",monster.subtitle).replace("{{护甲等级}}",monster.ac).replace("{{先攻}}",monster.initiative).replace("{{护甲等级}}",monster.ac).replace("{{生命值}}",monster.hp).replace("{{速度}}",monster.speed)
-        base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1]).replace("{{力量豁免}}",monster.str[2])
-        base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1]).replace("{{敏捷豁免}}",monster.dex[2])
-        base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1]).replace("{{体质豁免}}",monster.con[2])
-        base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1]).replace("{{智力豁免}}",monster.int[2])
-        base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1]).replace("{{感知豁免}}",monster.wis[2])
-        base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1]).replace("{{魅力豁免}}",monster.cha[2])
+        if legacy:
+            base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1]).replace("{{力量豁免}}",monster.str[2])
+            base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1]).replace("{{敏捷豁免}}",monster.dex[2])
+            base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1]).replace("{{体质豁免}}",monster.con[2])
+            base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1]).replace("{{智力豁免}}",monster.int[2])
+            base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1]).replace("{{感知豁免}}",monster.wis[2])
+            base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1]).replace("{{魅力豁免}}",monster.cha[2])
+        else:
+            base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1])
+            base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1])
+            base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1])
+            base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1])
+            base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1])
+            base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1])
         
         #剩下的数据栏
         if monster.skill != "":
             line = template_statlabel.replace("{{名称}}","技能").replace("{{内容}}",monster.skill)
             stat_contents.append(line)
-        #if monster.save != "":
-        #    line = template_statlabel.replace("{{名称}}","豁免").replace("{{内容}}",monster.save)
-        #    stat_contents.append(line)
+        if legacy and monster.save != "":
+            line = template_statlabel.replace("{{名称}}","豁免").replace("{{内容}}",monster.save)
+            stat_contents.append(line)
         if monster.vulner != "":
             line = template_statlabel.replace("{{名称}}","易伤").replace("{{内容}}",monster.vulner)
             stat_contents.append(line)
-        if monster.resistance != "":
-            line = template_statlabel.replace("{{名称}}","抗性").replace("{{内容}}",monster.resistance)
-            stat_contents.append(line)
-        if monster.immune != "":
-            line = template_statlabel.replace("{{名称}}","免疫").replace("{{内容}}",monster.immune)
-            stat_contents.append(line)
+        if legacy:
+            if monster.resistance != "":
+                line = template_statlabel.replace("{{名称}}","伤害抗性").replace("{{内容}}",monster.resistance)
+                stat_contents.append(line)
+            if monster.damage_immune != "":
+                line = template_statlabel.replace("{{名称}}","伤害免疫").replace("{{内容}}",monster.damage_immune)
+                stat_contents.append(line)
+            if monster.condition_immune != "":
+                line = template_statlabel.replace("{{名称}}","状态免疫").replace("{{内容}}",monster.condition_immune)
+                stat_contents.append(line)
+        else:
+            if monster.resistance != "":
+                line = template_statlabel.replace("{{名称}}","抗性").replace("{{内容}}",monster.resistance)
+                stat_contents.append(line)
+            if monster.immune != "":
+                line = template_statlabel.replace("{{名称}}","免疫").replace("{{内容}}",monster.immune)
+                stat_contents.append(line)
         if monster.gears != "":
             line = template_statlabel.replace("{{名称}}","装备").replace("{{内容}}",monster.gears)
             stat_contents.append(line)
@@ -382,9 +482,28 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
         if monster.lang != "":
             line = template_statlabel.replace("{{名称}}","语言").replace("{{内容}}",monster.lang)
             stat_contents.append(line)
-        if monster.cr != "":
-            line = template_statlabel.replace("{{名称}}","CR").replace("{{内容}}",monster.cr)
-            stat_contents.append(line)
+        if legacy:
+            if monster.cr != "":
+                pb = 2
+                #尝试寻找熟练加值
+                if "（" in monster.cr:
+                    cr = monster.cr[:monster.cr.find("（")]
+                    if cr.strip().isdigit():
+                        pb = 2+int((int(cr)-1)/4.0)
+                elif "+" in monster.cr:
+                    left = monster.cr.find("+")
+                    if left < len(monster.cr):
+                        modi = monster.cr[left+1]
+                        if modi.isdigit():
+                            pb = modi
+                
+                sub_line = template_pb.replace("{{内容}}","+"+str(pb))
+                line = template_statlabel.replace("{{名称}}","挑战等级").replace("{{内容}}",monster.cr+sub_line)
+                stat_contents.append(line)
+        else:
+            if monster.cr != "":
+                line = template_statlabel.replace("{{名称}}","CR").replace("{{内容}}",monster.cr)
+                stat_contents.append(line)
         
         #核心内容
         for content_line in monster.contents:
@@ -408,6 +527,11 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster") -> str:
                         result = template_spelllabel.replace("{{内容}}",content_line[len(word)+1:]).replace("{{条件}}",word)
                         print("[提醒]发现法术行："+content_line.strip())
                         break
+            #无效行
+            if result == "":
+                if content_line.startswith("————") and content_line.endswith("————"):
+                    continue
+            #剩下的
             if result == "":
                 if "。" in content_line:
                     right = content_line.find("。")
