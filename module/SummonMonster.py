@@ -72,7 +72,7 @@ class Monster:
                 saves.append("感知"+self.wis[2])
             if self.cha[1] != self.cha[2]:
                 saves.append("魅力"+self.cha[2])
-            self.save = "，".join(self.saves)
+            self.save = "，".join(saves)
         
         #优化一下一些空白位置的外观
         if self.str[2] == "":
@@ -432,19 +432,19 @@ def summon_monster(data: str,template_folder: str = "Goddess5EMonster",legacy: b
         #将内容塞入Base模板
         base = base.replace("{{名称}}",monster.title).replace("{{副栏}}",monster.subtitle).replace("{{护甲等级}}",monster.ac).replace("{{先攻}}",monster.initiative).replace("{{护甲等级}}",monster.ac).replace("{{生命值}}",monster.hp).replace("{{速度}}",monster.speed)
         if legacy:
-            base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1]).replace("{{力量豁免}}",monster.str[2])
-            base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1]).replace("{{敏捷豁免}}",monster.dex[2])
-            base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1]).replace("{{体质豁免}}",monster.con[2])
-            base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1]).replace("{{智力豁免}}",monster.int[2])
-            base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1]).replace("{{感知豁免}}",monster.wis[2])
-            base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1]).replace("{{魅力豁免}}",monster.cha[2])
-        else:
             base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1])
             base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1])
             base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1])
             base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1])
             base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1])
             base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1])
+        else:
+            base = base.replace("{{力量}}",monster.str[0]).replace("{{力量调整}}",monster.str[1]).replace("{{力量豁免}}",monster.str[2])
+            base = base.replace("{{敏捷}}",monster.dex[0]).replace("{{敏捷调整}}",monster.dex[1]).replace("{{敏捷豁免}}",monster.dex[2])
+            base = base.replace("{{体质}}",monster.con[0]).replace("{{体质调整}}",monster.con[1]).replace("{{体质豁免}}",monster.con[2])
+            base = base.replace("{{智力}}",monster.int[0]).replace("{{智力调整}}",monster.int[1]).replace("{{智力豁免}}",monster.int[2])
+            base = base.replace("{{感知}}",monster.wis[0]).replace("{{感知调整}}",monster.wis[1]).replace("{{感知豁免}}",monster.wis[2])
+            base = base.replace("{{魅力}}",monster.cha[0]).replace("{{魅力调整}}",monster.cha[1]).replace("{{魅力豁免}}",monster.cha[2])
         
         #剩下的数据栏
         if monster.skill != "":
